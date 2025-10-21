@@ -1,0 +1,71 @@
+# Escola de Dados - Git Ignore
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Temporary Files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Content Drafts (uncomment if you don't want to version control drafts)
+# /content/raw/
+
+# Personal Notes
+/workflows/personal-notes/
+*.private.md
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies (if you add any automation scripts)
+node_modules/
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Build Outputs (if you generate static sites from content)
+/dist/
+/build/
+/_site/
+
+# Sensitive Data
+credentials.json
+secrets.json
+*.key
+*.pem
+
+# Large Media Files (consider using Git LFS)
+*.mp4
+*.mov
+*.avi
+*.zip
+*.tar.gz
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Optional: Published content (if you want to version only source)
+# /content/processed/
+# /marketing/landing-pages/*/published/
