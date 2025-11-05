@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "18"
+
+jobs:
+  lint-and-type-check:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: sql-learn/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./sql-learn
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        working-directory: ./sql-learn
+        run: pnpm lint
+
+      - name: Check TypeScript
+        working-directory: ./sql-learn
+        run: pnpm typecheck
+
+      - name: Check Prettier formatting
+        working-directory: ./sql-learn
+        run: pnpm format:check
+
+  docs-check:
+    name: Documentation Touch Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need full history to compare branches
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run docs check
+        working-directory: ./sql-learn
+        env:
+          CI: "true"
+          BASE_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || 'main' }}
+        run: node scripts/check-docs.js
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: sql-learn/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./sql-learn
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        working-directory: ./sql-learn
+        run: pnpm test
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: sql-learn/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./sql-learn
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: ./sql-learn
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        working-directory: ./sql-learn
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: sql-learn/playwright-report/
+          retention-days: 7
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: sql-learn/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./sql-learn
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        working-directory: ./sql-learn
+        run: pnpm build
+
+      - name: Check build output
+        working-directory: ./sql-learn
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Build failed: .next directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
