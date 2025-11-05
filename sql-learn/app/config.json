@@ -1,0 +1,12 @@
+{
+  "flags": {
+    "allowPackUpload": true,
+    "enableSetEqAssert": true,
+    "enableTelemetry": false
+  },
+  "limits": {
+    "maxRowsLoadedPerPack": 200000,
+    "maxBytesPerDataset": 5242880,
+    "timeoutMs": 1500
+  }
+}
