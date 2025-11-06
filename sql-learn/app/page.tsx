@@ -13,6 +13,33 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    // Load collapsed sections from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('collapsedSections');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+    return new Set();
+  });
+
+  // Save collapsed sections to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('collapsedSections', JSON.stringify([...collapsedSections]));
+    }
+  }, [collapsedSections]);
+
+  const toggleSection = (sectionKey: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionKey)) {
+        newSet.delete(sectionKey);
+      } else {
+        newSet.add(sectionKey);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -117,6 +144,30 @@ export default function HomePage() {
     return { completed, total, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
+  // Find next recommended challenge
+  const getNextChallenge = () => {
+    // Find the first uncompleted challenge in the original pack order
+    const nextChallenge = pack.challenges.find(c => !completedChallenges.has(c.id));
+    if (!nextChallenge) return null;
+
+    // Find which category this challenge belongs to
+    let categoryInfo = null;
+    for (const [key, category] of Object.entries(challengesByCategory)) {
+      if (category.challenges.some(c => c.id === nextChallenge.id)) {
+        categoryInfo = { key, ...category };
+        break;
+      }
+    }
+
+    return {
+      challenge: nextChallenge,
+      category: categoryInfo,
+      index: pack.challenges.findIndex(c => c.id === nextChallenge.id) + 1
+    };
+  };
+
+  const nextChallengeInfo = getNextChallenge();
+
   const colorClasses = {
     blue: "bg-blue-100 text-blue-700 border-blue-200",
     purple: "bg-purple-100 text-purple-700 border-purple-200",
@@ -156,6 +207,86 @@ export default function HomePage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Continue Learning Section */}
+        {completionPercentage === 100 ? (
+          // Celebration Message for 100% completion
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-lg border-2 border-green-200 p-8 mb-8">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Congratulations!</h2>
+                  <p className="text-gray-700">You've completed all {pack.challenges.length} challenges in this pack!</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center sm:items-end">
+                <div className="text-6xl font-bold text-green-600 mb-1">100%</div>
+                <p className="text-sm text-gray-600">Pack Completed</p>
+              </div>
+            </div>
+          </div>
+        ) : nextChallengeInfo ? (
+          // Continue Learning Card
+          <Link href={`/challenges/${pack.id}/${nextChallengeInfo.challenge.id}`} className="block group mb-8">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg border-2 border-blue-200 p-8 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Continue Learning</span>
+                  </div>
+
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    Challenge #{nextChallengeInfo.index}: {nextChallengeInfo.challenge.title}
+                  </h2>
+
+                  <p className="text-gray-700 mb-4 line-clamp-2">
+                    {nextChallengeInfo.challenge.prompt}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {nextChallengeInfo.category && (
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${colorClasses[nextChallengeInfo.category.color as keyof typeof colorClasses]}`}>
+                        {nextChallengeInfo.category.title}
+                      </span>
+                    )}
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                      nextChallengeInfo.challenge.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                      nextChallengeInfo.challenge.difficulty === 'medium' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                      'bg-rose-100 text-rose-800 border-rose-200'
+                    }`}>
+                      {nextChallengeInfo.challenge.difficulty}
+                    </span>
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 text-blue-600 font-semibold text-lg group-hover:gap-3 transition-all">
+                    <span>Start Challenge</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0">
+                  <div className="text-center bg-white rounded-xl p-4 shadow-md min-w-[120px]">
+                    <p className="text-sm text-gray-600 mb-1">Your Progress</p>
+                    <div className="text-4xl font-bold text-blue-600 mb-1">{completionPercentage}%</div>
+                    <p className="text-xs text-gray-500">
+                      {completedChallenges.size}/{pack.challenges.length} completed
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+        ) : null}
+
         {/* Pack Header Card */}
         <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -223,16 +354,29 @@ export default function HomePage() {
 
             return (
               <div key={key} className="space-y-4">
-                {/* Section Header */}
-                <div className="flex items-center justify-between">
+                {/* Section Header - Clickable */}
+                <button
+                  onClick={() => toggleSection(key)}
+                  className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group"
+                >
                   <div className="flex items-center gap-3">
+                    {/* Chevron Icon */}
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${collapsedSections.has(key) ? '' : 'rotate-90'}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClasses[category.color as keyof typeof colorClasses]}`}>
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         {iconComponents[category.icon as keyof typeof iconComponents]}
                       </svg>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">{category.title}</h3>
+                    <div className="text-left">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{category.title}</h3>
                       <p className="text-sm text-gray-600">{category.description}</p>
                     </div>
                   </div>
@@ -274,20 +418,22 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
 
-                {/* Challenges Grid */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {category.challenges.map((challenge) => (
-                    <ChallengeCard
-                      key={challenge.id}
-                      challenge={challenge}
-                      packId={pack.id}
-                      completed={completedChallenges.has(challenge.id)}
-                      index={pack.challenges.findIndex(c => c.id === challenge.id) + 1}
-                    />
-                  ))}
-                </div>
+                {/* Challenges Grid - Collapsible */}
+                {!collapsedSections.has(key) && (
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300">
+                    {category.challenges.map((challenge) => (
+                      <ChallengeCard
+                        key={challenge.id}
+                        challenge={challenge}
+                        packId={pack.id}
+                        completed={completedChallenges.has(challenge.id)}
+                        index={pack.challenges.findIndex(c => c.id === challenge.id) + 1}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
