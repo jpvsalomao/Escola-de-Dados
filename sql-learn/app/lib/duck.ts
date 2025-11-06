@@ -75,8 +75,23 @@ export async function executeQueryWithTimeout(
  * Load a Parquet file into DuckDB
  */
 export async function loadParquet(tableName: string, url: string): Promise<void> {
+  const database = await initDuckDB();
   const connection = await getConnection();
-  await connection.query(`CREATE OR REPLACE TABLE ${tableName} AS SELECT * FROM '${url}'`);
+
+  // Fetch the parquet file
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch parquet file from ${url}`);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+
+  // Register the file with DuckDB
+  const fileName = `${tableName}.parquet`;
+  await database.registerFileBuffer(fileName, uint8Array);
+
+  // Load the parquet file into a table
+  await connection.query(`CREATE OR REPLACE TABLE ${tableName} AS SELECT * FROM '${fileName}'`);
 }
 
 /**

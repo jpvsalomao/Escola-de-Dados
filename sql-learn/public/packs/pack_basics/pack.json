@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.1",
+  "min_app_version": "1.0.0",
+  "id": "pack_basics",
+  "title": "SQL Basics",
+  "metadata": {
+    "author": "Escola de Dados",
+    "locale": "pt-BR",
+    "tags": ["intro", "beginner", "fundamentals"]
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "datasets": {}
+  },
+  "datasets": [
+    {
+      "name": "customers",
+      "src": "customers.parquet"
+    },
+    {
+      "name": "orders",
+      "src": "orders.parquet"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "q1_select_all",
+      "title": "Select All Customers",
+      "prompt": "Write a query to retrieve all columns from the customers table.",
+      "dialect": "duckdb",
+      "hint": "Use SELECT * to get all columns.",
+      "solution_sql": "SELECT * FROM customers;",
+      "tests": [
+        {
+          "name": "returns_all_rows",
+          "assert": "ROWCOUNT",
+          "expected": 5
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["select", "basics"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "q2_count_orders",
+      "title": "Count All Orders",
+      "prompt": "Write a query to count the total number of orders.",
+      "dialect": "duckdb",
+      "hint": "Use COUNT(*) to count rows.",
+      "solution_sql": "SELECT COUNT(*) AS total FROM orders;",
+      "tests": [
+        {
+          "name": "row_count_is_one",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        },
+        {
+          "name": "total_equals_10",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT COUNT(*) FROM ({{USER_SQL}}) t) = 1 AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["count", "aggregate"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "q3_filter_country",
+      "title": "Filter by Country",
+      "prompt": "Find all customers from Brazil (country = 'Brazil').",
+      "dialect": "duckdb",
+      "hint": "Use WHERE to filter rows.",
+      "solution_sql": "SELECT * FROM customers WHERE country = 'Brazil';",
+      "tests": [
+        {
+          "name": "returns_three_rows",
+          "assert": "ROWCOUNT",
+          "expected": 3
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["where", "filter"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "q4_order_by_price",
+      "title": "Order by Price",
+      "prompt": "List all orders sorted by amount in descending order.",
+      "dialect": "duckdb",
+      "hint": "Use ORDER BY column_name DESC.",
+      "solution_sql": "SELECT * FROM orders ORDER BY amount DESC;",
+      "tests": [
+        {
+          "name": "returns_all_orders",
+          "assert": "ROWCOUNT",
+          "expected": 10
+        },
+        {
+          "name": "first_row_has_max_amount",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT amount FROM ({{USER_SQL}}) t LIMIT 1) = (SELECT MAX(amount) FROM orders) AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["order by", "sorting"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "q5_group_by_customer",
+      "title": "Total Spent per Customer",
+      "prompt": "Calculate the total amount spent by each customer. Return customer_id and total_spent.",
+      "dialect": "duckdb",
+      "hint": "Use GROUP BY customer_id and SUM(amount).",
+      "solution_sql": "SELECT customer_id, SUM(amount) AS total_spent FROM orders GROUP BY customer_id ORDER BY customer_id;",
+      "tests": [
+        {
+          "name": "returns_correct_number_of_customers",
+          "assert": "ROWCOUNT",
+          "expected": 5
+        },
+        {
+          "name": "has_correct_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(DISTINCT column_name) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["group by", "aggregate", "sum"],
+      "difficulty": "medium"
+    }
+  ]
+}

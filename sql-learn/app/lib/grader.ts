@@ -14,10 +14,13 @@ export async function gradeQuery(
   let elapsedMs = 0;
   let rowsReturned = 0;
 
+  // Normalize the SQL query - trim whitespace and remove trailing semicolons
+  const normalizedSql = userSql.trim().replace(/;+\s*$/, '');
+
   try {
     // Execute user query with timeout
     const { data, elapsedMs: queryTime } = await executeQueryWithTimeout(
-      userSql,
+      normalizedSql,
       config.limits.timeoutMs
     );
     elapsedMs = queryTime;
@@ -40,7 +43,7 @@ export async function gradeQuery(
 
     // Run each test
     for (const test of tests) {
-      const check = await runTest(test, userSql, data, options);
+      const check = await runTest(test, normalizedSql, data, options);
       checks.push(check);
     }
   } catch (error) {
