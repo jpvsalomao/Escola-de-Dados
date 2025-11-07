@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Editor } from "@/app/components/Editor";
 import { ResultGrid } from "@/app/components/ResultGrid";
+import { Breadcrumb } from "@/app/components/Breadcrumb";
+import { KeyboardShortcuts } from "@/app/components/KeyboardShortcuts";
 import { loadPack, loadPackDatasets } from "@/app/lib/pack";
 import { gradeQuery } from "@/app/lib/grader";
 import { executeQuery, getTableSchema } from "@/app/lib/duck";
@@ -76,6 +78,34 @@ export default function ChallengePage() {
 
     loadData();
   }, [packId, challengeId]);
+
+  // Keyboard shortcuts
+  const handleRunCallback = useCallback(async () => {
+    if (!sql.trim() || running) return;
+    await handleRun();
+  }, [sql, running]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + Enter to run query
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleRunCallback();
+      }
+      // Escape to clear results
+      if (e.key === "Escape") {
+        if (gradeResult || results.length > 0 || error) {
+          e.preventDefault();
+          setResults([]);
+          setGradeResult(null);
+          setError(null);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleRunCallback, gradeResult, results, error]);
 
   async function handleRun() {
     if (!sql.trim()) {
@@ -223,7 +253,7 @@ export default function ChallengePage() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link
-                href="/"
+                href={`/packs/${packId}`}
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors group"
                 aria-label="Back to challenges"
               >
@@ -265,6 +295,14 @@ export default function ChallengePage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          items={[
+            { label: pack.title, href: `/packs/${packId}` },
+            { label: challenge.title }
+          ]}
+        />
+
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Left panel - Instructions (2 columns) */}
           <div className="lg:col-span-2 space-y-4">
@@ -349,6 +387,9 @@ export default function ChallengePage() {
               </div>
             </div>
 
+            {/* Keyboard Shortcuts */}
+            <KeyboardShortcuts />
+
             {/* Hint */}
             {challenge.hint && (
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
@@ -423,6 +464,7 @@ export default function ChallengePage() {
                   onClick={handleRun}
                   disabled={running}
                   className="btn-primary flex items-center gap-2"
+                  title="Run Query (Ctrl+Enter)"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

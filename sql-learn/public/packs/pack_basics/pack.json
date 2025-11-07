@@ -1,12 +1,28 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "min_app_version": "1.0.0",
   "id": "pack_basics",
-  "title": "SQL Basics",
+  "title": "SQL Fundamentals",
+  "description": "Master the fundamentals of SQL through hands-on practice. Learn to query, filter, sort, and aggregate data using real-world examples.",
   "metadata": {
     "author": "Escola de Dados",
+    "authorBio": "Escola de Dados is a Brazilian initiative focused on data literacy and empowering people with data skills.",
+    "authorLinks": {
+      "website": "https://escoladedados.org",
+      "github": "https://github.com/escola-de-dados"
+    },
     "locale": "pt-BR",
-    "tags": ["intro", "beginner", "fundamentals"]
+    "tags": ["intro", "beginner", "fundamentals", "SQL basics"],
+    "difficulty": "beginner",
+    "estimatedTimeMinutes": 30,
+    "prerequisites": [],
+    "learningObjectives": [
+      "Write SELECT statements to retrieve data from tables",
+      "Filter data using WHERE clauses",
+      "Sort results with ORDER BY",
+      "Count and aggregate data using COUNT, SUM, and GROUP BY",
+      "Understand basic SQL syntax and query structure"
+    ]
   },
   "integrity": {
     "algorithm": "sha256",
@@ -22,6 +38,20 @@
       "src": "orders.parquet"
     }
   ],
+  "sections": {
+    "basics": {
+      "title": "Basic Queries",
+      "description": "Learn SELECT and WHERE fundamentals",
+      "icon": "document-text",
+      "color": "blue"
+    },
+    "aggregation": {
+      "title": "Aggregations",
+      "description": "Master COUNT, SUM, and GROUP BY",
+      "icon": "calculator",
+      "color": "purple"
+    }
+  },
   "challenges": [
     {
       "id": "q1_select_all",
@@ -42,7 +72,8 @@
         "row_limit": 1000
       },
       "tags": ["select", "basics"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "section": "basics"
     },
     {
       "id": "q2_count_orders",
@@ -69,7 +100,8 @@
         "row_limit": 1000
       },
       "tags": ["count", "aggregate"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "section": "aggregation"
     },
     {
       "id": "q3_filter_country",
@@ -90,7 +122,8 @@
         "row_limit": 1000
       },
       "tags": ["where", "filter"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "section": "basics"
     },
     {
       "id": "q4_order_by_price",
@@ -117,7 +150,8 @@
         "row_limit": 1000
       },
       "tags": ["order by", "sorting"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "section": "basics"
     },
     {
       "id": "q5_group_by_customer",
@@ -144,7 +178,8 @@
         "row_limit": 1000
       },
       "tags": ["group by", "aggregate", "sum"],
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "section": "aggregation"
     }
   ]
 }

@@ -1,13 +1,26 @@
-// Pack Schema v1.1
+// Pack Schema v1.2 (backward compatible with v1.1)
 export interface PackSchema {
   schema_version: string;
   min_app_version: string;
   id: string;
   title: string;
+  description?: string;
   metadata: {
     author: string;
+    authorBio?: string;
+    authorLinks?: {
+      website?: string;
+      github?: string;
+      twitter?: string;
+      linkedin?: string;
+    };
     locale: string;
     tags: string[];
+    difficulty?: "beginner" | "intermediate" | "advanced";
+    estimatedTimeMinutes?: number;
+    prerequisites?: string[];
+    learningObjectives?: string[];
+    coverImage?: string;
   };
   integrity: {
     algorithm: string;
@@ -16,6 +29,13 @@ export interface PackSchema {
   datasets: Array<{
     name: string;
     src: string;
+  }>;
+  // Optional: Section definitions (v1.2+)
+  sections?: Record<string, {
+    title: string;
+    description?: string;
+    icon?: string;
+    color?: string;
   }>;
   challenges: Challenge[];
 }
@@ -34,6 +54,7 @@ export interface Challenge {
   };
   tags: string[];
   difficulty: "easy" | "medium" | "hard";
+  section?: string; // Optional: section ID (v1.2+)
 }
 
 export type AssertType = "ROWCOUNT" | "SQL" | "SCHEMA_EQ" | "SET_EQ" | "NEAR";

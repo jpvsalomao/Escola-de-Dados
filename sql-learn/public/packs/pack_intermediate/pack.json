@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.2",
+  "min_app_version": "1.0.0",
+  "id": "pack_intermediate",
+  "title": "SQL Intermediate",
+  "description": "Level up your SQL skills with advanced queries. Master JOINs, subqueries, and complex aggregations to solve real-world data problems.",
+  "metadata": {
+    "author": "Escola de Dados",
+    "authorBio": "Escola de Dados is a Brazilian initiative focused on data literacy and empowering people with data skills.",
+    "authorLinks": {
+      "website": "https://escoladedados.org",
+      "github": "https://github.com/escola-de-dados"
+    },
+    "locale": "pt-BR",
+    "tags": ["intermediate", "joins", "subqueries", "advanced"],
+    "difficulty": "intermediate",
+    "estimatedTimeMinutes": 45,
+    "prerequisites": ["Basic SQL knowledge", "Understanding of SELECT, WHERE, and GROUP BY"],
+    "learningObjectives": [
+      "Combine data from multiple tables using INNER JOIN",
+      "Filter results using subqueries",
+      "Use CASE statements for conditional logic",
+      "Perform complex aggregations with multiple grouping levels",
+      "Apply HAVING clause to filter aggregated results"
+    ]
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "datasets": {}
+  },
+  "datasets": [
+    {
+      "name": "customers",
+      "src": "customers.parquet"
+    },
+    {
+      "name": "orders",
+      "src": "orders.parquet"
+    }
+  ],
+  "sections": {
+    "joins": {
+      "title": "Table JOINs",
+      "description": "Combine data from multiple tables",
+      "icon": "link",
+      "color": "orange"
+    },
+    "advanced": {
+      "title": "Advanced Techniques",
+      "description": "Subqueries, CASE statements, and conditional logic",
+      "icon": "lightning",
+      "color": "indigo"
+    },
+    "aggregation": {
+      "title": "Complex Aggregations",
+      "description": "Advanced grouping with HAVING and multi-table aggregations",
+      "icon": "calculator",
+      "color": "purple"
+    }
+  },
+  "challenges": [
+    {
+      "id": "q1_inner_join",
+      "title": "Join Customers and Orders",
+      "prompt": "Write a query to retrieve customer names along with their order amounts. Use INNER JOIN to combine the customers and orders tables.",
+      "dialect": "duckdb",
+      "hint": "Use INNER JOIN on customer_id. Select name from customers and amount from orders.",
+      "solution_sql": "SELECT c.name, o.amount FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id;",
+      "tests": [
+        {
+          "name": "returns_correct_row_count",
+          "assert": "ROWCOUNT",
+          "expected": 10
+        },
+        {
+          "name": "has_two_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(DISTINCT column_name) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["join", "inner join"],
+      "difficulty": "medium",
+      "section": "joins"
+    },
+    {
+      "id": "q2_subquery_filter",
+      "title": "Customers with High-Value Orders",
+      "prompt": "Find all customers who have placed orders with amount greater than 150. Use a subquery in the WHERE clause.",
+      "dialect": "duckdb",
+      "hint": "Use WHERE customer_id IN (SELECT customer_id FROM orders WHERE amount > 150).",
+      "solution_sql": "SELECT * FROM customers WHERE customer_id IN (SELECT customer_id FROM orders WHERE amount > 150);",
+      "tests": [
+        {
+          "name": "returns_correct_customers",
+          "assert": "ROWCOUNT",
+          "expected": 3
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["subquery", "filter", "where"],
+      "difficulty": "medium",
+      "section": "advanced"
+    },
+    {
+      "id": "q3_case_statement",
+      "title": "Categorize Order Amounts",
+      "prompt": "Create a query that categorizes orders as 'High' (amount >= 150), 'Medium' (amount >= 100), or 'Low' (amount < 100). Return order_id and the category.",
+      "dialect": "duckdb",
+      "hint": "Use CASE WHEN amount >= 150 THEN 'High' WHEN amount >= 100 THEN 'Medium' ELSE 'Low' END.",
+      "solution_sql": "SELECT order_id, CASE WHEN amount >= 150 THEN 'High' WHEN amount >= 100 THEN 'Medium' ELSE 'Low' END AS category FROM orders;",
+      "tests": [
+        {
+          "name": "returns_all_orders",
+          "assert": "ROWCOUNT",
+          "expected": 10
+        },
+        {
+          "name": "has_two_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(DISTINCT column_name) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["case", "conditional"],
+      "difficulty": "medium",
+      "section": "advanced"
+    },
+    {
+      "id": "q4_having_clause",
+      "title": "Customers with Multiple Orders",
+      "prompt": "Find customers who have placed more than 1 order. Show customer_id and the count of orders. Use GROUP BY with HAVING.",
+      "dialect": "duckdb",
+      "hint": "Use GROUP BY customer_id HAVING COUNT(*) > 1.",
+      "solution_sql": "SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id HAVING COUNT(*) > 1 ORDER BY customer_id;",
+      "tests": [
+        {
+          "name": "returns_correct_customers",
+          "assert": "ROWCOUNT",
+          "expected": 4
+        },
+        {
+          "name": "includes_customer_id_column",
+          "assert": "SQL",
+          "sql": "SELECT EXISTS(SELECT 1 FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name = 'customer_id') AS ok",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "includes_count_column",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) >= 1 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name LIKE '%count%' OR column_name LIKE 'COUNT%'",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["having", "group by", "aggregate"],
+      "difficulty": "medium",
+      "section": "aggregation"
+    },
+    {
+      "id": "q5_complex_aggregation",
+      "title": "Average Order Value by Country",
+      "prompt": "Calculate the average order amount for each country. Join customers and orders, then group by country. Show country and avg_amount, ordered by avg_amount descending.",
+      "dialect": "duckdb",
+      "hint": "Use INNER JOIN, then GROUP BY country and calculate AVG(amount). Don't forget ORDER BY.",
+      "solution_sql": "SELECT c.country, AVG(o.amount) AS avg_amount FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.country ORDER BY avg_amount DESC;",
+      "tests": [
+        {
+          "name": "returns_all_countries",
+          "assert": "ROWCOUNT",
+          "expected": 3
+        },
+        {
+          "name": "has_correct_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(DISTINCT column_name) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["join", "aggregate", "group by", "avg"],
+      "difficulty": "hard",
+      "section": "aggregation"
+    }
+  ]
+}

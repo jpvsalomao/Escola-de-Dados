@@ -12,8 +12,9 @@ export async function loadPack(packPath: string): Promise<PackSchema> {
   }
   const pack: PackSchema = await response.json();
 
-  // Validate schema version
-  if (pack.schema_version !== "1.1") {
+  // Validate schema version (support v1.1 and v1.2)
+  const supportedVersions = ["1.1", "1.2"];
+  if (!supportedVersions.includes(pack.schema_version)) {
     throw new Error(`Unsupported pack schema version: ${pack.schema_version}`);
   }
 
@@ -59,6 +60,7 @@ export async function getAvailablePacks(): Promise<Array<{ id: string; path: str
   // In future versions, this could be dynamic
   return [
     { id: "pack_basics", path: "/packs/pack_basics" },
+    { id: "pack_intermediate", path: "/packs/pack_intermediate" },
   ];
 }
 
