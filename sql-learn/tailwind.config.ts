@@ -11,6 +11,9 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      scale: {
+        '98': '0.98',
+      },
     },
   },
   plugins: [],

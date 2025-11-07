@@ -7,6 +7,8 @@ import { Editor } from "@/app/components/Editor";
 import { ResultGrid } from "@/app/components/ResultGrid";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { KeyboardShortcuts } from "@/app/components/KeyboardShortcuts";
+import { Confetti } from "@/app/components/Confetti";
+import { AnimatedNumber } from "@/app/components/AnimatedNumber";
 import { loadPack, loadPackDatasets } from "@/app/lib/pack";
 import { gradeQuery } from "@/app/lib/grader";
 import { executeQuery, getTableSchema } from "@/app/lib/duck";
@@ -33,6 +35,7 @@ export default function ChallengePage() {
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [tableSchemas, setTableSchemas] = useState<Record<string, Array<{ name: string; type: string }>>>({});
   const [duckdbReady, setDuckdbReady] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -145,6 +148,8 @@ export default function ChallengePage() {
       if (result.pass) {
         markCompleted(packId, challengeId, result.stats.elapsedMs);
         logChallengeAttempt(packId, challengeId, true, result.stats.elapsedMs);
+        // Trigger confetti celebration
+        setShowConfetti(true);
       } else {
         recordAttempt(packId, challengeId);
         logChallengeAttempt(packId, challengeId, false, result.stats.elapsedMs);
@@ -228,7 +233,7 @@ export default function ChallengePage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Challenge not found</h2>
-          <p className="text-gray-500 mb-4">This challenge doesn't exist or has been removed.</p>
+          <p className="text-gray-500 mb-4">This challenge doesn&apos;t exist or has been removed.</p>
           <Link href="/" className="btn-primary inline-block">
             Return to Challenges
           </Link>
@@ -466,21 +471,47 @@ export default function ChallengePage() {
                   className="btn-primary flex items-center gap-2"
                   title="Run Query (Ctrl+Enter)"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {running ? "Running..." : "Run Query"}
+                  {running ? (
+                    <>
+                      <div className="inline-flex items-center gap-1 loading-dots">
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                      </div>
+                      <span>Running...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Run Query
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={running}
                   className="btn-success flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {running ? "Submitting..." : "Submit Answer"}
+                  {running ? (
+                    <>
+                      <div className="inline-flex items-center gap-1 loading-dots">
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                      </div>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Submit Answer
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -531,11 +562,15 @@ export default function ChallengePage() {
                     </h3>
                     <ul className="space-y-2">
                       {gradeResult.checks.map((check, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
+                        <li
+                          key={idx}
+                          className="flex items-start gap-2 text-sm stagger-fade-in"
+                          style={{ animationDelay: `${idx * 50}ms` }}
+                        >
                           <span className="flex-shrink-0 mt-0.5">
                             {check.pass ? (
-                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              <svg className="w-5 h-5 text-green-600 animate-bounce-in" fill="none" stroke="currentColor" viewBox="0 0 20 20" strokeWidth={2}>
+                                <path className="checkmark-draw" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
                               <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
@@ -559,13 +594,13 @@ export default function ChallengePage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>{gradeResult.stats.elapsedMs.toFixed(2)}ms</span>
+                        <AnimatedNumber value={gradeResult.stats.elapsedMs} decimals={2} suffix="ms" />
                       </div>
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        <span>{gradeResult.stats.rowsReturned} rows</span>
+                        <AnimatedNumber value={gradeResult.stats.rowsReturned} decimals={0} suffix=" rows" />
                       </div>
                     </div>
                   </div>
@@ -592,6 +627,9 @@ export default function ChallengePage() {
           </div>
         </div>
       </main>
+
+      {/* Confetti Celebration */}
+      <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { cn } from "@/app/lib/utils";
 import type { Challenge } from "@/app/lib/types";
+import { getDifficultyColorClasses } from "@/app/lib/ui-constants";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -19,12 +20,7 @@ export function ChallengeCard({
   className,
   index,
 }: ChallengeCardProps) {
-  const difficultyColors = {
-    easy: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    medium: "bg-amber-100 text-amber-800 border-amber-200",
-    hard: "bg-rose-100 text-rose-800 border-rose-200",
-  };
-
+  // Difficulty icon paths (specific to challenge cards)
   const difficultyIcons = {
     easy: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
     medium: "M13 10V3L4 14h7v7l9-11h-7z",
@@ -35,15 +31,15 @@ export function ChallengeCard({
     <Link href={`/challenges/${packId}/${challenge.id}`} className="group">
       <div
         className={cn(
-          "relative h-full bg-white border-2 border-gray-200 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1",
-          completed && "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-md",
-          !completed && "hover:border-blue-300",
+          "relative h-full glass-strong rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2",
+          completed && "border-2 border-green-400/50 shadow-lg shadow-green-500/20 hover-glow-green",
+          !completed && "border border-white/50 hover:border-blue-400/50 hover-glow-blue",
           className
         )}
       >
         {/* Challenge Number Badge */}
         {index && (
-          <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+          <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-500/50 glow-blue">
             {index}
           </div>
         )}
@@ -64,7 +60,7 @@ export function ChallengeCard({
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border",
-                difficultyColors[challenge.difficulty]
+                getDifficultyColorClasses(challenge.difficulty)
               )}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

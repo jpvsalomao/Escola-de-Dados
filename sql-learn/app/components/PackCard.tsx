@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { cn } from "@/app/lib/utils";
+import { getDifficultyColorClasses } from "@/app/lib/ui-constants";
 
 interface PackCardProps {
   id: string;
@@ -26,12 +27,6 @@ export function PackCard({
   estimatedTimeMinutes,
   className,
 }: PackCardProps) {
-  const difficultyColors = {
-    beginner: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    intermediate: "bg-amber-100 text-amber-800 border-amber-200",
-    advanced: "bg-rose-100 text-rose-800 border-rose-200",
-  };
-
   const isCompleted = completionPercentage === 100;
   const isInProgress = completionPercentage > 0 && completionPercentage < 100;
 
@@ -39,16 +34,16 @@ export function PackCard({
     <Link href={`/packs/${id}`} className="group">
       <div
         className={cn(
-          "relative h-full bg-white border-2 border-gray-200 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1",
-          isCompleted && "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-md",
-          isInProgress && "border-blue-300",
-          !isCompleted && !isInProgress && "hover:border-blue-300",
+          "relative h-full glass-strong rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2",
+          isCompleted && "border-2 border-green-400/50 shadow-lg shadow-green-500/20 hover-glow-green",
+          isInProgress && "border-2 border-blue-400/50 shadow-lg shadow-blue-500/20 hover-glow-blue",
+          !isCompleted && !isInProgress && "border border-white/50 hover:border-blue-400/50 hover-glow-blue",
           className
         )}
       >
         {/* Progress Badge */}
         {isCompleted && (
-          <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+          <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/50 glow-green">
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
@@ -56,7 +51,7 @@ export function PackCard({
         )}
 
         {isInProgress && (
-          <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+          <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50 glow-blue">
             <span className="text-white text-xs font-bold">{completionPercentage}%</span>
           </div>
         )}
@@ -103,7 +98,7 @@ export function PackCard({
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border",
-                difficultyColors[difficulty]
+                getDifficultyColorClasses(difficulty)
               )}
             >
               {difficulty}

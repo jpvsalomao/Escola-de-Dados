@@ -52,7 +52,7 @@ export default function HomePage() {
           })
         );
 
-        setPacks(packsWithDetails.filter((p): p is PackInfo => p !== null));
+        setPacks(packsWithDetails.filter(p => p !== null) as PackInfo[]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load packs");
       } finally {
@@ -136,7 +136,7 @@ export default function HomePage() {
   const completedPacks = packs.filter(p => p.completionPercentage === 100).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 gradient-animate">
       {/* Hero Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -154,7 +154,7 @@ export default function HomePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-blue">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-purple">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +182,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-green">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

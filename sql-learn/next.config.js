@@ -15,7 +15,7 @@ const nextConfig = {
 
     return config;
   },
-  // Enable CORS headers for WASM files
+  // Enable CORS headers for WASM files and CSP for DuckDB
   async headers() {
     return [
       {
@@ -23,6 +23,11 @@ const nextConfig = {
         headers: [
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          // DuckDB-WASM requires unsafe-eval for WebAssembly compilation and CDN access
+          {
+            key: 'Content-Security-Policy',
+            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob:;"
+          },
         ],
       },
     ];

@@ -98,7 +98,7 @@
         {
           "name": "returns_correct_customers",
           "assert": "ROWCOUNT",
-          "expected": 3
+          "expected": 5
         }
       ],
       "limits": {

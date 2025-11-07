@@ -7,9 +7,11 @@ import { ChallengeCard } from "@/app/components/ChallengeCard";
 import { ChallengeCardSkeleton } from "@/app/components/ChallengeCardSkeleton";
 import { ProgressBadge } from "@/app/components/ProgressBadge";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
+import { Icon } from "@/app/components/Icon";
 import { loadPack } from "@/app/lib/pack";
 import { getAllProgress, getPackCompletionPercentage } from "@/app/lib/progress";
 import type { PackSchema } from "@/app/lib/types";
+import { getSectionColorClasses, getDifficultyColorClasses } from "@/app/lib/ui-constants";
 
 export default function PackPage() {
   const params = useParams();
@@ -210,36 +212,6 @@ export default function PackPage() {
 
   const nextChallengeInfo = getNextChallenge();
 
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-100 text-blue-700 border-blue-200",
-    purple: "bg-purple-100 text-purple-700 border-purple-200",
-    green: "bg-green-100 text-green-700 border-green-200",
-    orange: "bg-orange-100 text-orange-700 border-orange-200",
-    indigo: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    gray: "bg-gray-100 text-gray-700 border-gray-200"
-  };
-
-  const iconComponents: Record<string, React.ReactNode> = {
-    "document-text": (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    ),
-    "calculator": (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-    ),
-    "sort-ascending": (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-    ),
-    "link": (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-    ),
-    "lightning": (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    ),
-    "collection": (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-    )
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Hero Header */}
@@ -278,7 +250,7 @@ export default function PackPage() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">Congratulations!</h2>
-                  <p className="text-gray-700">You've completed all {pack.challenges.length} challenges in this pack!</p>
+                  <p className="text-gray-700">You&apos;ve completed all {pack.challenges.length} challenges in this pack!</p>
                 </div>
               </div>
               <div className="flex flex-col items-center sm:items-end">
@@ -310,15 +282,11 @@ export default function PackPage() {
 
                   <div className="flex flex-wrap gap-2 mb-4">
                     {nextChallengeInfo.section && (
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${colorClasses[nextChallengeInfo.section.color as keyof typeof colorClasses]}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${getSectionColorClasses(nextChallengeInfo.section.color)}`}>
                         {nextChallengeInfo.section.title}
                       </span>
                     )}
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${
-                      nextChallengeInfo.challenge.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                      nextChallengeInfo.challenge.difficulty === 'medium' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-                      'bg-rose-100 text-rose-800 border-rose-200'
-                    }`}>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${getDifficultyColorClasses(nextChallengeInfo.challenge.difficulty)}`}>
                       {nextChallengeInfo.challenge.difficulty}
                     </span>
                   </div>
@@ -356,11 +324,7 @@ export default function PackPage() {
               <div className="flex flex-wrap gap-2">
                 {pack.metadata.difficulty && (
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold border ${
-                      pack.metadata.difficulty === 'beginner' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                      pack.metadata.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-                      'bg-rose-100 text-rose-800 border-rose-200'
-                    }`}
+                    className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold border ${getDifficultyColorClasses(pack.metadata.difficulty)}`}
                   >
                     {pack.metadata.difficulty}
                   </span>
@@ -425,7 +389,7 @@ export default function PackPage() {
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                What You'll Learn
+                What You&apos;ll Learn
               </h3>
               <ul className="space-y-2">
                 {pack.metadata.learningObjectives.map((objective, index) => (
@@ -555,10 +519,8 @@ export default function PackPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
 
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClasses[section.color as keyof typeof colorClasses]}`}>
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        {iconComponents[section.icon as keyof typeof iconComponents]}
-                      </svg>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getSectionColorClasses(section.color)}`}>
+                      <Icon name={section.icon} />
                     </div>
                     <div className="text-left">
                       <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{section.title}</h3>

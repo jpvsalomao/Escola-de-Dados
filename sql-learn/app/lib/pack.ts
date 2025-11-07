@@ -2,10 +2,20 @@ import type { PackSchema, Challenge } from "./types";
 import { loadParquet } from "./duck";
 import { config } from "./config";
 
+// In-memory cache for pack metadata
+const packCache = new Map<string, { pack: PackSchema; timestamp: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 /**
- * Load a pack from a URL or path
+ * Load a pack from a URL or path (with caching)
  */
 export async function loadPack(packPath: string): Promise<PackSchema> {
+  // Check cache first
+  const cached = packCache.get(packPath);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.pack;
+  }
+
   const response = await fetch(`${packPath}/pack.json`);
   if (!response.ok) {
     throw new Error(`Failed to load pack from ${packPath}`);
@@ -25,7 +35,17 @@ export async function loadPack(packPath: string): Promise<PackSchema> {
     throw new Error(`Pack requires app version ${minVersion} or higher`);
   }
 
+  // Cache the pack
+  packCache.set(packPath, { pack, timestamp: Date.now() });
+
   return pack;
+}
+
+/**
+ * Clear the pack cache (useful for testing or forcing refresh)
+ */
+export function clearPackCache(): void {
+  packCache.clear();
 }
 
 /**
