@@ -72,10 +72,60 @@ export default function PackPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-lg font-medium text-gray-700">Loading challenges...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Breadcrumb Skeleton */}
+          <div className="mb-6">
+            <div className="h-5 bg-gray-200 rounded w-48 relative overflow-hidden">
+              <div className="absolute inset-0 shimmer" />
+            </div>
+          </div>
+
+          {/* Pack Header Skeleton */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8 mb-8">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <div className="h-10 bg-gray-200 rounded w-64 mb-4 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="h-5 bg-gray-200 rounded w-96 max-w-full mb-2 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="h-5 bg-gray-200 rounded w-80 max-w-full relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+              </div>
+              <div className="w-20 h-20 bg-gray-200 rounded-full relative overflow-hidden">
+                <div className="absolute inset-0 shimmer" />
+              </div>
+            </div>
+
+            {/* Stats Row Skeleton */}
+            <div className="flex gap-6 mt-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-gray-200 rounded relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-24 relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section Skeleton */}
+          <div className="mb-6">
+            <div className="h-7 bg-gray-200 rounded w-48 mb-4 relative overflow-hidden">
+              <div className="absolute inset-0 shimmer" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <ChallengeCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -215,16 +265,20 @@ export default function PackPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Hero Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-gray-200 shadow-sm" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-3 mb-3">
-            <Link href="/" className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Link 
+              href="/" 
+              className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Return to home"
+            >
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
               </svg>
             </Link>
             <div>
-              <Link href="/" className="text-4xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors">
+              <Link href="/" className="text-4xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
                 SQL Learn
               </Link>
               <p className="text-gray-600 mt-1 text-lg">Interactive SQL challenges from Escola de Dados</p>
@@ -233,7 +287,7 @@ export default function PackPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" role="main">
         {/* Breadcrumb */}
         <Breadcrumb items={[{ label: pack.title }]} />
 
@@ -261,8 +315,12 @@ export default function PackPage() {
           </div>
         ) : nextChallengeInfo ? (
           // Continue Learning Card
-          <Link href={`/challenges/${pack.id}/${nextChallengeInfo.challenge.id}`} className="block group mb-8">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg border-2 border-blue-200 p-8 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+          <Link 
+            href={`/challenges/${pack.id}/${nextChallengeInfo.challenge.id}`} 
+            className="block group mb-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-4 rounded-2xl"
+            aria-label={`Continue with challenge ${nextChallengeInfo.index}: ${nextChallengeInfo.challenge.title}`}
+          >
+            <article className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg border-2 border-blue-200 p-8 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-blue-300">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
@@ -309,7 +367,7 @@ export default function PackPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </article>
           </Link>
         ) : null}
 
@@ -506,7 +564,10 @@ export default function PackPage() {
                 {/* Section Header - Clickable */}
                 <button
                   onClick={() => toggleSection(section.id)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group"
+                  className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-expanded={!collapsedSections.has(section.id)}
+                  aria-controls={`section-${section.id}-content`}
+                  aria-label={`${collapsedSections.has(section.id) ? 'Expand' : 'Collapse'} ${section.title} section`}
                 >
                   <div className="flex items-center gap-3">
                     {/* Chevron Icon */}
@@ -515,11 +576,15 @@ export default function PackPage() {
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
 
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getSectionColorClasses(section.color)}`}>
+                    <div 
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${getSectionColorClasses(section.color)}`}
+                      aria-hidden="true"
+                    >
                       <Icon name={section.icon} />
                     </div>
                     <div className="text-left">
@@ -569,7 +634,12 @@ export default function PackPage() {
 
                 {/* Challenges Grid - Collapsible */}
                 {!collapsedSections.has(section.id) && (
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300">
+                  <div 
+                    id={`section-${section.id}-content`}
+                    className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300"
+                    role="list"
+                    aria-label={`${section.title} challenges`}
+                  >
                     {section.challenges.map((challenge) => (
                       <ChallengeCard
                         key={challenge.id}
@@ -587,7 +657,7 @@ export default function PackPage() {
         </div>
       </main>
 
-      <footer className="mt-20 border-t border-gray-200 bg-white">
+      <footer className="mt-20 border-t border-gray-200 bg-white" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <p className="text-sm text-gray-600">

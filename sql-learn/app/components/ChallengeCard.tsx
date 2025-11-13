@@ -28,19 +28,27 @@ export function ChallengeCard({
   };
 
   return (
-    <Link href={`/challenges/${packId}/${challenge.id}`} className="group">
-      <div
+    <Link 
+      href={`/challenges/${packId}/${challenge.id}`} 
+      className="group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-2xl"
+      aria-label={`${challenge.title} - ${challenge.difficulty} difficulty challenge${completed ? ', completed' : ''}`}
+    >
+      <article
         className={cn(
           "relative h-full glass-strong rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2",
           completed && "border-2 border-green-400/50 shadow-lg shadow-green-500/20 hover-glow-green",
           !completed && "border border-white/50 hover:border-blue-400/50 hover-glow-blue",
           className
         )}
+        role="listitem"
       >
         {/* Challenge Number Badge */}
         {index && (
-          <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-500/50 glow-blue">
-            {index}
+          <div 
+            className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-500/50 glow-blue"
+            aria-label={`Challenge ${index}`}
+          >
+            <span aria-hidden="true">{index}</span>
           </div>
         )}
 
@@ -63,7 +71,7 @@ export function ChallengeCard({
                 getDifficultyColorClasses(challenge.difficulty)
               )}
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={difficultyIcons[challenge.difficulty]} />
               </svg>
               {challenge.difficulty}
@@ -88,13 +96,13 @@ export function ChallengeCard({
           <div className="pt-2">
             <div className="inline-flex items-center gap-2 text-blue-600 font-medium text-sm group-hover:gap-3 transition-all">
               <span>{completed ? "Review Challenge" : "Start Challenge"}</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

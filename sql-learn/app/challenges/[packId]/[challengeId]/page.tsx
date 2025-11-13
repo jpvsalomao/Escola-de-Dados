@@ -194,11 +194,81 @@ export default function ChallengePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-lg font-medium text-gray-700">Loading challenge...</p>
-          <p className="text-sm text-gray-500 mt-2">Preparing your SQL playground</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Breadcrumb Skeleton */}
+          <div className="mb-6">
+            <div className="h-5 bg-gray-200 rounded w-64 relative overflow-hidden">
+              <div className="absolute inset-0 shimmer" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Challenge Info Skeleton */}
+            <div className="space-y-6">
+              {/* Challenge Header */}
+              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <div className="h-8 bg-gray-200 rounded w-3/4 mb-4 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-full relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-5/6 relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-4/6 relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Schema Skeleton */}
+              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-4 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-12 bg-gray-100 rounded relative overflow-hidden">
+                      <div className="absolute inset-0 shimmer" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Editor Skeleton */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <div className="h-6 bg-gray-200 rounded w-24 mb-4 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="h-64 bg-gray-100 rounded relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <div className="h-10 bg-gray-200 rounded w-24 relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                  <div className="h-10 bg-gray-200 rounded w-24 relative overflow-hidden">
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Loading Message with Animation */}
+          <div className="fixed bottom-8 right-8 bg-white rounded-xl shadow-lg border border-gray-200 px-6 py-4 flex items-center gap-3">
+            <div className="flex gap-1 loading-dots">
+              <span className="w-2 h-2 bg-blue-600 rounded-full inline-block"></span>
+              <span className="w-2 h-2 bg-blue-600 rounded-full inline-block"></span>
+              <span className="w-2 h-2 bg-blue-600 rounded-full inline-block"></span>
+            </div>
+            <p className="text-sm font-medium text-gray-700">Preparing your SQL playground</p>
+          </div>
         </div>
       </div>
     );
@@ -299,7 +369,7 @@ export default function ChallengePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
         {/* Breadcrumb Navigation */}
         <Breadcrumb
           items={[
@@ -400,34 +470,58 @@ export default function ChallengePage() {
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
                 <button
                   onClick={() => setShowHint(!showHint)}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold w-full"
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg p-1 -m-1"
+                  aria-expanded={showHint}
+                  aria-controls="hint-content"
                 >
-                  <svg className={`w-5 h-5 transition-transform ${showHint ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-5 h-5 transition-transform duration-300 ${showHint ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  {showHint ? "Hide Hint" : "Need a Hint?"}
+                  <span className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    {showHint ? "Hide Hint" : "Need a Hint?"}
+                  </span>
                 </button>
                 {showHint && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-gray-700 text-sm leading-relaxed">{challenge.hint}</p>
+                  <div id="hint-content" className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in duration-300">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hint}</p>
+                    </div>
                   </div>
                 )}
               </div>
             )}
 
             {/* Solution */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
+            <div className="bg-white rounded-2xl border-2 border-amber-200 p-6 shadow-sm">
               <button
                 onClick={() => setShowSolution(!showSolution)}
-                className="flex items-center gap-2 text-orange-600 hover:text-orange-800 font-semibold w-full"
+                className="flex items-center gap-2 text-amber-700 hover:text-amber-900 font-semibold w-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 rounded-lg p-1 -m-1"
+                aria-expanded={showSolution}
+                aria-controls="solution-content"
               >
-                <svg className={`w-5 h-5 transition-transform ${showSolution ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 transition-transform duration-300 ${showSolution ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                {showSolution ? "Hide Solution" : "View Solution"}
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {showSolution ? "Hide Solution" : "View Solution"}
+                </span>
               </button>
               {showSolution && (
-                <div className="mt-4">
+                <div id="solution-content" className="mt-4 animate-in fade-in duration-300">
+                  <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-900">
+                      <strong>💡 Learning Tip:</strong> Try to understand <em>why</em> this solution works, not just copy it. What SQL concepts does it use?
+                    </p>
+                  </div>
                   <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg text-sm overflow-x-auto font-mono">
                     {challenge.solution_sql}
                   </pre>
@@ -518,9 +612,13 @@ export default function ChallengePage() {
 
             {/* Error Display */}
             {error && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top">
+              <div 
+                className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top"
+                role="alert"
+                aria-live="assertive"
+              >
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                     <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -535,15 +633,23 @@ export default function ChallengePage() {
 
             {/* Grade Result */}
             {gradeResult && (
-              <div className={`border-2 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top ${
-                gradeResult.pass
-                  ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
-              }`}>
+              <div 
+                className={`border-2 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top ${
+                  gradeResult.pass
+                    ? "bg-green-50 border-green-200"
+                    : "bg-red-50 border-red-200"
+                }`}
+                role={gradeResult.pass ? "status" : "alert"}
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <div className="flex items-start gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    gradeResult.pass ? "bg-green-100" : "bg-red-100"
-                  }`}>
+                  <div 
+                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      gradeResult.pass ? "bg-green-100" : "bg-red-100"
+                    }`}
+                    aria-hidden="true"
+                  >
                     {gradeResult.pass ? (
                       <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -558,8 +664,17 @@ export default function ChallengePage() {
                     <h3 className={`font-bold text-lg mb-2 ${
                       gradeResult.pass ? "text-green-900" : "text-red-900"
                     }`}>
-                      {gradeResult.pass ? "All Tests Passed!" : "Some Tests Failed"}
+                      {gradeResult.pass ? "🎉 Perfect! Challenge Complete!" : "Not Quite Right"}
                     </h3>
+                    {gradeResult.pass ? (
+                      <p className="text-sm text-green-700 mb-3">
+                        Excellent work! You&apos;ve mastered this SQL concept. Ready for the next challenge?
+                      </p>
+                    ) : (
+                      <p className="text-sm text-red-700 mb-3">
+                        Don&apos;t worry! Review the failing tests below, adjust your query, and try again. You&apos;re learning!
+                      </p>
+                    )}
                     <ul className="space-y-2">
                       {gradeResult.checks.map((check, idx) => (
                         <li

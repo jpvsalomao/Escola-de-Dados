@@ -30,7 +30,11 @@ npm run format:check # Check formatting
 # Testing
 npm test             # Run unit tests (Vitest)
 npm run test:e2e     # Run E2E tests (Playwright)
+npm run test:e2e -- --headed  # Run E2E tests with browser UI
+npm run test:e2e -- --debug   # Run E2E tests in debug mode
 ```
+
+**Note:** This project uses npm as the package manager.
 
 ## Architecture
 
@@ -82,7 +86,7 @@ public/packs/pack_basics/
 See `app/lib/types.ts` for TypeScript interfaces and `docs/ADR/ADR-0002-pack-schema.md` for detailed specification.
 
 **Key Pack Configuration:**
-- `schema_version`: "1.1"
+- `schema_version`: "1.1" or "1.2"
 - `challenges[]`: Array of challenge definitions
 - `datasets[]`: Dataset file references
 - `metadata`: Author info, difficulty, learning objectives
@@ -108,12 +112,12 @@ Challenges are automatically grouped by tags in the pack page (`app/packs/[packI
 - **Sorting** - tags: order by, sorting
 - **Other** - Fallback for uncategorized challenges
 
-**Important:** Always add appropriate tags to challenges to ensure they appear in the correct category.
+**Important:** Always add appropriate tags to challenges to ensure they appear in the correct category. The categorization logic is in the pack page component, not in the pack schema itself.
 
 ## Adding New Packs
 
 1. Create directory: `public/packs/<pack_id>/`
-2. Add `pack.json` with schema v1.1 structure
+2. Add `pack.json` with schema v1.1 or v1.2 structure
 3. Add `.parquet` dataset files
 4. Register pack in `app/lib/pack.ts`:
    ```typescript
@@ -139,6 +143,9 @@ df = pd.DataFrame({
 df.to_parquet("output.parquet", index=False)
 ```
 
+**Dataset Script:**
+The project includes `scripts/generate-sample-data.py` for generating sample datasets.
+
 ## DuckDB Integration
 
 **Key Module:** `app/lib/duck.ts`
@@ -160,13 +167,16 @@ The DuckDB wrapper handles:
 ```
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
+Content-Security-Policy: script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob:;
 ```
+
+These headers are ESSENTIAL for DuckDB-WASM to function. Do not remove them.
 
 ## Component Organization
 
 ### Reusable Components (`app/components/`)
 
-- `Editor.tsx` - Monaco-based SQL editor
+- `Editor.tsx` - Monaco-based SQL editor (lazy loaded)
 - `ResultGrid.tsx` - Displays query results in table format
 - `ChallengeCard.tsx` - Challenge preview card
 - `PackCard.tsx` - Pack preview card with progress
@@ -175,6 +185,9 @@ Cross-Origin-Embedder-Policy: require-corp
 - `KeyboardShortcuts.tsx` - Collapsible keyboard shortcuts panel
 - `PackCardSkeleton.tsx` - Loading skeleton for pack cards
 - `ChallengeCardSkeleton.tsx` - Loading skeleton for challenge cards
+- `AnimatedNumber.tsx` - Animated number transitions
+- `Confetti.tsx` - Celebration animation
+- `Icon.tsx` - Icon component wrapper
 
 ### Page Structure
 
@@ -183,6 +196,10 @@ Cross-Origin-Embedder-Policy: require-corp
 - `app/challenges/[packId]/[challengeId]/page.tsx` - Challenge workspace
 
 ## Important Patterns
+
+### Monaco Editor Lazy Loading
+
+The Monaco Editor is dynamically imported to reduce initial bundle size. It's loaded when the challenge page is opened.
 
 ### Loading States
 
@@ -201,6 +218,11 @@ Progress is stored in localStorage using `app/lib/progress.ts`:
 - `recordAttempt(packId, challengeId, elapsedMs)` - Record attempt with time
 - `getProgress(packId, challengeId)` - Get challenge progress
 - `getAllProgress()` - Get all progress
+- `getPackCompletionPercentage(packId)` - Get pack completion percentage
+
+### Collapsible Sections
+
+Pack pages support collapsible sections. The collapsed state is persisted in localStorage per pack using the key `collapsedSections_${packId}`.
 
 ## Testing Strategy
 
@@ -228,6 +250,8 @@ Key settings:
 - `limits.maxRowsLoadedPerPack` - Max rows per query (default: 200,000)
 - `limits.maxBytesPerDataset` - Max dataset file size (default: 5MB)
 - `flags.enableTelemetry` - Enable event logging
+- `flags.allowPackUpload` - Enable user pack uploads (future)
+- `flags.enableSetEqAssert` - Enable SET_EQ assert type
 
 ## Common Pitfalls
 
@@ -236,6 +260,8 @@ Key settings:
 3. **Category Tags:** Challenges without matching category tags will appear in "Other" section
 4. **DuckDB Initialization:** Always check if DuckDB is ready before executing queries
 5. **Solution SQL:** Must be valid and return expected results for all tests to pass
+6. **Headers Configuration:** The CORS and CSP headers in `next.config.js` are critical for DuckDB-WASM
+7. **SQL Normalization:** The grader automatically removes trailing semicolons from queries
 
 ## Debugging Tips
 
@@ -243,6 +269,8 @@ Key settings:
 2. **Pack Loading Issues:** Verify pack.json schema version and structure
 3. **Test Failures:** Run solution_sql manually to verify expected results
 4. **Progress Not Saving:** Check localStorage in browser DevTools
+5. **DuckDB Not Loading:** Check that headers are correctly configured in browser Network tab
+6. **Category Issues:** Verify challenge tags match the category definitions in the pack page component
 
 ## Documentation
 
@@ -250,16 +278,21 @@ Key docs to reference:
 - `docs/ARCHITECTURE.md` - Detailed system architecture
 - `docs/ADR/ADR-0002-pack-schema.md` - Pack schema specification
 - `docs/PLAYBOOKS/iteration-playbook.md` - Development workflow
+- `docs/CONTEXT_INDEX.md` - Module overview and recent changes
+- `docs/CHANGELOG.md` - Version history
 - `README.md` - Setup and quick start
 
 ## TypeScript Types
 
 Core types in `app/lib/types.ts`:
-- `PackSchema` - Pack configuration structure
+- `PackSchema` - Pack configuration structure (supports v1.1 and v1.2)
 - `Challenge` - Challenge definition
 - `Test` - Test assertion configuration
+- `AssertType` - Union type of assertion types
 - `GradeResult` - Grading output
+- `GradeOptions` - Grading configuration options
 - `Progress` - Progress tracking data
+- `AppConfig` - Application configuration
 
 ## Security Considerations
 
@@ -268,3 +301,27 @@ Core types in `app/lib/types.ts`:
 - Query timeouts prevent runaway queries
 - File size limits enforced for datasets
 - No remote data loading (same-origin only)
+- Pack integrity checking via SHA-256 hashes (optional)
+
+## Performance
+
+### Optimizations
+- Parquet format for efficient data loading
+- Monaco Editor lazy loaded
+- Code splitting with Next.js
+- Pack metadata caching (5 minute TTL)
+- DuckDB runs in Web Worker (off main thread)
+
+### Bundle Size
+- Total: ~4-5 MB (including DuckDB-WASM)
+- DuckDB-WASM: ~2-3 MB
+- Monaco Editor: ~1 MB (lazy loaded)
+- App Code: ~500 KB
+
+## Styling
+
+The project uses Tailwind CSS with custom utility functions:
+- `getSectionColorClasses(section)` - Returns color classes for sections
+- `getDifficultyColorClasses(difficulty)` - Returns color classes for difficulty levels
+
+These are defined in `app/lib/ui-constants.tsx`.

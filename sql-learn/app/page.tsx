@@ -65,27 +65,39 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         {/* Hero Header Skeleton */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse"></div>
+              <div className="w-16 h-16 bg-gray-200 rounded-xl relative overflow-hidden">
+                <div className="absolute inset-0 shimmer" />
+              </div>
               <div className="space-y-2 flex-1">
-                <div className="h-12 bg-gray-200 rounded w-48 animate-pulse"></div>
-                <div className="h-6 bg-gray-200 rounded w-96 animate-pulse"></div>
+                <div className="h-12 bg-gray-200 rounded w-48 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
+                <div className="h-6 bg-gray-200 rounded w-96 max-w-full relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer" />
+                </div>
               </div>
             </div>
 
             {/* Stats Grid Skeleton */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-100 rounded-xl p-4 animate-pulse">
+                <div key={i} className="bg-gray-100 rounded-xl p-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg relative overflow-hidden">
+                      <div className="absolute inset-0 shimmer" />
+                    </div>
                     <div className="space-y-2 flex-1">
-                      <div className="h-3 bg-gray-200 rounded w-20"></div>
-                      <div className="h-6 bg-gray-200 rounded w-12"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20 relative overflow-hidden">
+                        <div className="absolute inset-0 shimmer" />
+                      </div>
+                      <div className="h-6 bg-gray-200 rounded w-12 relative overflow-hidden">
+                        <div className="absolute inset-0 shimmer" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -96,8 +108,12 @@ export default function HomePage() {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="mb-8">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-5 bg-gray-200 rounded w-96 animate-pulse"></div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 relative overflow-hidden">
+              <div className="absolute inset-0 shimmer" />
+            </div>
+            <div className="h-5 bg-gray-200 rounded w-96 max-w-full relative overflow-hidden">
+              <div className="absolute inset-0 shimmer" />
+            </div>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -136,12 +152,15 @@ export default function HomePage() {
   const completedPacks = packs.filter(p => p.completionPercentage === 100).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 gradient-animate">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Hero Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-gray-200 shadow-sm" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+            <div 
+              className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg"
+              aria-hidden="true"
+            >
               <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
               </svg>
@@ -153,45 +172,45 @@ export default function HomePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8" role="region" aria-label="Learning statistics">
             <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-blue">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center" aria-hidden="true">
                   <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Challenge Packs</p>
-                  <p className="text-2xl font-bold text-gray-900">{packs.length}</p>
+                  <p className="text-sm text-gray-600" id="packs-label">Challenge Packs</p>
+                  <p className="text-2xl font-bold text-gray-900" aria-labelledby="packs-label">{packs.length}</p>
                 </div>
               </div>
             </div>
 
             <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-purple">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center" aria-hidden="true">
                   <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Challenges</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalChallenges}</p>
+                  <p className="text-sm text-gray-600" id="challenges-label">Total Challenges</p>
+                  <p className="text-2xl font-bold text-gray-900" aria-labelledby="challenges-label">{totalChallenges}</p>
                 </div>
               </div>
             </div>
 
             <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-green">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center" aria-hidden="true">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Your Progress</p>
-                  <p className="text-2xl font-bold text-gray-900">{averageCompletion}%</p>
+                  <p className="text-sm text-gray-600" id="progress-label">Your Progress</p>
+                  <p className="text-2xl font-bold text-gray-900" aria-labelledby="progress-label">{averageCompletion}%</p>
                 </div>
               </div>
             </div>
@@ -199,44 +218,46 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" role="main">
         {/* Section Title */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Available Challenge Packs</h2>
-          <p className="text-gray-600">Choose a pack to start learning SQL through interactive challenges</p>
-        </div>
+        <section aria-labelledby="packs-heading">
+          <div className="mb-8">
+            <h2 id="packs-heading" className="text-3xl font-bold text-gray-900 mb-2">Available Challenge Packs</h2>
+            <p className="text-gray-600">Choose a pack to start learning SQL through interactive challenges</p>
+          </div>
 
-        {/* Packs Grid */}
-        {packs.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
+          {/* Packs Grid */}
+          {packs.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center" role="status">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Packs Available</h3>
+              <p className="text-gray-600">Check back later for new challenge packs!</p>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Packs Available</h3>
-            <p className="text-gray-600">Check back later for new challenge packs!</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {packs.map((pack) => (
-              <PackCard
-                key={pack.id}
-                id={pack.id}
-                title={pack.title}
-                description={pack.description}
-                challengeCount={pack.challengeCount}
-                completionPercentage={pack.completionPercentage}
-                tags={pack.tags}
-                difficulty={pack.difficulty}
-                estimatedTimeMinutes={pack.estimatedTimeMinutes}
-              />
-            ))}
-          </div>
-        )}
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
+              {packs.map((pack) => (
+                <PackCard
+                  key={pack.id}
+                  id={pack.id}
+                  title={pack.title}
+                  description={pack.description}
+                  challengeCount={pack.challengeCount}
+                  completionPercentage={pack.completionPercentage}
+                  tags={pack.tags}
+                  difficulty={pack.difficulty}
+                  estimatedTimeMinutes={pack.estimatedTimeMinutes}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
-      <footer className="mt-20 border-t border-gray-200 bg-white">
+      <footer className="mt-20 border-t border-gray-200 bg-white" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <p className="text-sm text-gray-600">

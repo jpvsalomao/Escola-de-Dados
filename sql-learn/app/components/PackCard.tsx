@@ -31,8 +31,12 @@ export function PackCard({
   const isInProgress = completionPercentage > 0 && completionPercentage < 100;
 
   return (
-    <Link href={`/packs/${id}`} className="group">
-      <div
+    <Link 
+      href={`/packs/${id}`} 
+      className="group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-2xl"
+      aria-label={`${title} - ${challengeCount} challenges, ${completionPercentage}% complete, ${difficulty} difficulty`}
+    >
+      <article
         className={cn(
           "relative h-full glass-strong rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2",
           isCompleted && "border-2 border-green-400/50 shadow-lg shadow-green-500/20 hover-glow-green",
@@ -40,19 +44,26 @@ export function PackCard({
           !isCompleted && !isInProgress && "border border-white/50 hover:border-blue-400/50 hover-glow-blue",
           className
         )}
+        role="listitem"
       >
         {/* Progress Badge */}
         {isCompleted && (
-          <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/50 glow-green">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div 
+            className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/50 glow-green"
+            aria-label="Completed"
+          >
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
         )}
 
         {isInProgress && (
-          <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50 glow-blue">
-            <span className="text-white text-xs font-bold">{completionPercentage}%</span>
+          <div 
+            className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50 glow-blue"
+            aria-label={`${completionPercentage}% complete`}
+          >
+            <span className="text-white text-xs font-bold" aria-hidden="true">{completionPercentage}%</span>
           </div>
         )}
 
@@ -70,14 +81,14 @@ export function PackCard({
           {/* Stats */}
           <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>{challengeCount} challenges</span>
             </div>
             {estimatedTimeMinutes && (
               <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>~{estimatedTimeMinutes} min</span>
@@ -85,7 +96,7 @@ export function PackCard({
             )}
             {isInProgress && (
               <div className="flex items-center gap-1.5 text-blue-600 font-medium">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 <span>In Progress</span>
@@ -125,13 +136,13 @@ export function PackCard({
               <span>
                 {isCompleted ? "Review Pack" : isInProgress ? "Continue Pack" : "Start Pack"}
               </span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
