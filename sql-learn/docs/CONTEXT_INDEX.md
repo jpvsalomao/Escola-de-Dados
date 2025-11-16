@@ -1,7 +1,7 @@
 # Context Index
 
-**Last Updated:** 2025-11-05
-**Version:** 1.0.0
+**Last Updated:** 2025-11-15
+**Version:** 2.0.0
 
 ## Purpose
 
@@ -165,6 +165,17 @@ See `/docs/ADR/` for detailed Architecture Decision Records.
 
 - **ADR-0001:** Tech stack choices (Next.js, DuckDB-WASM, Monaco)
 - **ADR-0002:** Pack schema design v1.1
+
+## Design System
+
+See `/docs/DESIGN_SYSTEM.md` for comprehensive visual design guidelines.
+
+**Version 2.0 (November 2025):**
+- **Distinctive Color Palette:** Teal/coral signature theme (moved from generic blue)
+- **Typography Enhancements:** Gradient text for heroes and headings
+- **Component Updates:** Gradient borders, status strips, enhanced animations
+- **Accessibility:** WCAG AA compliance with improved contrast ratios
+- **Educational Focus:** Colors and patterns inspired by database/data themes
 
 ## Key Patterns
 

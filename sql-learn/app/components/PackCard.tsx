@@ -31,17 +31,17 @@ export function PackCard({
   const isInProgress = completionPercentage > 0 && completionPercentage < 100;
 
   return (
-    <Link 
-      href={`/packs/${id}`} 
-      className="group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-2xl"
+    <Link
+      href={`/packs/${id}`}
+      className="group focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 rounded-2xl"
       aria-label={`${title} - ${challengeCount} challenges, ${completionPercentage}% complete, ${difficulty} difficulty`}
     >
       <article
         className={cn(
           "relative h-full glass-strong rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2",
-          isCompleted && "border-2 border-green-400/50 shadow-lg shadow-green-500/20 hover-glow-green",
-          isInProgress && "border-2 border-blue-400/50 shadow-lg shadow-blue-500/20 hover-glow-blue",
-          !isCompleted && !isInProgress && "border border-white/50 hover:border-blue-400/50 hover-glow-blue",
+          isCompleted && "border-2 border-emerald-400/50 shadow-lg shadow-emerald-500/20 hover-glow-green",
+          isInProgress && "border-2 border-orange-400/50 shadow-lg shadow-orange-500/20 hover-glow-coral",
+          !isCompleted && !isInProgress && "border border-white/50 hover:border-teal-400/50 hover-glow-teal",
           className
         )}
         role="listitem"
@@ -59,8 +59,8 @@ export function PackCard({
         )}
 
         {isInProgress && (
-          <div 
-            className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50 glow-blue"
+          <div
+            className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/50 glow-coral pulse-badge"
             aria-label={`${completionPercentage}% complete`}
           >
             <span className="text-white text-xs font-bold" aria-hidden="true">{completionPercentage}%</span>
@@ -69,7 +69,7 @@ export function PackCard({
 
         <div className="space-y-4">
           {/* Title */}
-          <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 className="text-2xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors">
             {title}
           </h3>
 
@@ -95,7 +95,7 @@ export function PackCard({
               </div>
             )}
             {isInProgress && (
-              <div className="flex items-center gap-1.5 text-blue-600 font-medium">
+              <div className="flex items-center gap-1.5 text-orange-600 font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
@@ -132,7 +132,7 @@ export function PackCard({
 
           {/* Start Button */}
           <div className="pt-2">
-            <div className="inline-flex items-center gap-2 text-blue-600 font-medium text-sm group-hover:gap-3 transition-all">
+            <div className="inline-flex items-center gap-2 text-teal-600 font-medium text-sm group-hover:gap-3 transition-all">
               <span>
                 {isCompleted ? "Review Pack" : isInProgress ? "Continue Pack" : "Start Pack"}
               </span>

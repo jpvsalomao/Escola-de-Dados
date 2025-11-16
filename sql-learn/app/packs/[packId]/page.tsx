@@ -72,7 +72,7 @@ export default function PackPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb Skeleton */}
           <div className="mb-6">
@@ -144,8 +144,8 @@ export default function PackPage() {
             <h2 className="text-xl font-bold text-gray-900">Error Loading Pack</h2>
           </div>
           <p className="text-red-600 mb-4">{error || "Pack not found"}</p>
-          <Link href="/" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link href="/" className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 rounded">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to Packs
@@ -263,14 +263,14 @@ export default function PackPage() {
   const nextChallengeInfo = getNextChallenge();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
       {/* Hero Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-3 mb-3">
-            <Link 
-              href="/" 
-              className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            <Link
+              href="/"
+              className="w-12 h-12 bg-gradient-to-br from-teal-600 to-cyan-700 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-shadow focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
               aria-label="Return to home"
             >
               <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -278,7 +278,7 @@ export default function PackPage() {
               </svg>
             </Link>
             <div>
-              <Link href="/" className="text-4xl font-bold text-gray-900 tracking-tight hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
+              <Link href="/" className="text-4xl font-bold text-gray-900 tracking-tight hover:text-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 rounded">
                 SQL Learn
               </Link>
               <p className="text-gray-600 mt-1 text-lg">Interactive SQL challenges from Escola de Dados</p>
@@ -315,22 +315,22 @@ export default function PackPage() {
           </div>
         ) : nextChallengeInfo ? (
           // Continue Learning Card
-          <Link 
-            href={`/challenges/${pack.id}/${nextChallengeInfo.challenge.id}`} 
-            className="block group mb-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-4 rounded-2xl"
+          <Link
+            href={`/challenges/${pack.id}/${nextChallengeInfo.challenge.id}`}
+            className="block group mb-8 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-4 rounded-2xl"
             aria-label={`Continue with challenge ${nextChallengeInfo.index}: ${nextChallengeInfo.challenge.title}`}
           >
-            <article className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg border-2 border-blue-200 p-8 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-blue-300">
+            <article className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl shadow-lg border-2 border-orange-200 p-8 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-orange-300 hover-glow-coral">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Continue Learning</span>
+                    <span className="text-sm font-semibold text-orange-700 uppercase tracking-wide">Continue Learning</span>
                   </div>
 
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
                     Challenge #{nextChallengeInfo.index}: {nextChallengeInfo.challenge.title}
                   </h2>
 
@@ -349,9 +349,9 @@ export default function PackPage() {
                     </span>
                   </div>
 
-                  <div className="inline-flex items-center gap-2 text-blue-600 font-semibold text-lg group-hover:gap-3 transition-all">
+                  <div className="inline-flex items-center gap-2 text-orange-600 font-semibold text-lg group-hover:gap-3 transition-all">
                     <span>Start Challenge</span>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </div>
@@ -360,7 +360,7 @@ export default function PackPage() {
                 <div className="flex-shrink-0">
                   <div className="text-center bg-white rounded-xl p-4 shadow-md min-w-[120px]">
                     <p className="text-sm text-gray-600 mb-1">Your Progress</p>
-                    <div className="text-4xl font-bold text-blue-600 mb-1">{completionPercentage}%</div>
+                    <div className="text-4xl font-bold text-orange-600 mb-1">{completionPercentage}%</div>
                     <p className="text-xs text-gray-500">
                       {completedChallenges.size}/{pack.challenges.length} completed
                     </p>
@@ -404,8 +404,8 @@ export default function PackPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center" aria-hidden="true">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
@@ -415,8 +415,8 @@ export default function PackPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center" aria-hidden="true">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -426,8 +426,8 @@ export default function PackPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center" aria-hidden="true">
+                <svg className="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -444,7 +444,7 @@ export default function PackPage() {
           {pack.metadata.learningObjectives && pack.metadata.learningObjectives.length > 0 && (
             <div className="pt-6 border-t border-gray-200 mt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 What You&apos;ll Learn
@@ -452,7 +452,7 @@ export default function PackPage() {
               <ul className="space-y-2">
                 {pack.metadata.learningObjectives.map((objective, index) => (
                   <li key={index} className="flex items-start gap-2 text-gray-700">
-                    <span className="text-blue-600 mt-1">•</span>
+                    <span className="text-teal-600 mt-1">•</span>
                     <span>{objective}</span>
                   </li>
                 ))}
@@ -484,7 +484,7 @@ export default function PackPage() {
           {(pack.metadata.authorBio || pack.metadata.authorLinks) && (
             <div className="pt-6 border-t border-gray-200 mt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 About the Author
@@ -499,9 +499,9 @@ export default function PackPage() {
                       href={pack.metadata.authorLinks.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-800 font-medium"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                       </svg>
                       Website
@@ -564,7 +564,7 @@ export default function PackPage() {
                 {/* Section Header - Clickable */}
                 <button
                   onClick={() => toggleSection(section.id)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
                   aria-expanded={!collapsedSections.has(section.id)}
                   aria-controls={`section-${section.id}-content`}
                   aria-label={`${collapsedSections.has(section.id) ? 'Expand' : 'Collapse'} ${section.title} section`}
@@ -581,14 +581,14 @@ export default function PackPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
 
-                    <div 
+                    <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center ${getSectionColorClasses(section.color)}`}
                       aria-hidden="true"
                     >
                       <Icon name={section.icon} />
                     </div>
                     <div className="text-left">
-                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{section.title}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors">{section.title}</h3>
                       <p className="text-sm text-gray-600">{section.description}</p>
                     </div>
                   </div>
@@ -618,7 +618,7 @@ export default function PackPage() {
                           cy="18"
                           r="15.5"
                           fill="none"
-                          stroke={sectionProgress.percentage === 100 ? '#10b981' : '#3b82f6'}
+                          stroke={sectionProgress.percentage === 100 ? '#10b981' : '#0D9488'}
                           strokeWidth="3"
                           strokeDasharray={`${(sectionProgress.percentage / 100) * 97.4}, 97.4`}
                           strokeLinecap="round"

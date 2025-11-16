@@ -45,7 +45,12 @@ export interface Challenge {
   title: string;
   prompt: string;
   dialect: string;
-  hint?: string;
+  hint?: string; // Deprecated: use hints instead (backward compatibility)
+  hints?: {
+    tier1?: string; // Gentle nudge
+    tier2?: string; // More specific direction
+    tier3?: string; // Near-solution guidance
+  };
   solution_sql: string;
   tests: Test[];
   limits: {

@@ -4,14 +4,18 @@ import React from "react";
  * Shared UI constants and utilities for consistent theming
  */
 
-// Section/Category color mappings
+// Section/Category color mappings - v2.0 (Teal/Coral Theme)
 export const SECTION_COLORS = {
-  blue: "bg-blue-100 text-blue-700 border-blue-200",
-  purple: "bg-purple-100 text-purple-700 border-purple-200",
-  green: "bg-green-100 text-green-700 border-green-200",
+  teal: "bg-teal-100 text-teal-700 border-teal-200",
+  cyan: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  emerald: "bg-emerald-100 text-emerald-700 border-emerald-200",
   orange: "bg-orange-100 text-orange-700 border-orange-200",
   indigo: "bg-indigo-100 text-indigo-700 border-indigo-200",
   gray: "bg-gray-100 text-gray-700 border-gray-200",
+  // Legacy support (map to new colors)
+  blue: "bg-teal-100 text-teal-700 border-teal-200",
+  purple: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  green: "bg-emerald-100 text-emerald-700 border-emerald-200",
 } as const;
 
 export type SectionColorKey = keyof typeof SECTION_COLORS;

@@ -14,13 +14,14 @@
     "locale": "pt-BR",
     "tags": ["intro", "beginner", "fundamentals", "SQL basics"],
     "difficulty": "beginner",
-    "estimatedTimeMinutes": 30,
+    "estimatedTimeMinutes": 90,
     "prerequisites": [],
     "learningObjectives": [
       "Write SELECT statements to retrieve data from tables",
-      "Filter data using WHERE clauses",
-      "Sort results with ORDER BY",
-      "Count and aggregate data using COUNT, SUM, and GROUP BY",
+      "Filter data using WHERE clauses with multiple conditions",
+      "Sort results with ORDER BY in ascending and descending order",
+      "Count and aggregate data using COUNT, SUM, AVG, MIN, MAX",
+      "Group data with GROUP BY and filter groups with HAVING",
       "Understand basic SQL syntax and query structure"
     ]
   },
@@ -45,9 +46,15 @@
       "icon": "document-text",
       "color": "blue"
     },
+    "sorting": {
+      "title": "Sorting",
+      "description": "Order your results with ORDER BY",
+      "icon": "arrows-up-down",
+      "color": "green"
+    },
     "aggregation": {
       "title": "Aggregations",
-      "description": "Master COUNT, SUM, and GROUP BY",
+      "description": "Master COUNT, SUM, AVG, and GROUP BY",
       "icon": "calculator",
       "color": "purple"
     }
@@ -58,8 +65,12 @@
       "title": "Select All Customers",
       "prompt": "Write a query to retrieve all columns from the customers table.",
       "dialect": "duckdb",
-      "hint": "Use SELECT * to get all columns.",
-      "solution_sql": "SELECT * FROM customers;",
+      "hints": {
+        "tier1": "You need to use the SELECT statement to retrieve data from a table.",
+        "tier2": "Use the asterisk (*) symbol to select all columns at once.",
+        "tier3": "The syntax is: SELECT * FROM table_name;"
+      },
+      "solution_sql": "SELECT * FROM customers",
       "tests": [
         {
           "name": "returns_all_rows",
@@ -76,22 +87,26 @@
       "section": "basics"
     },
     {
-      "id": "q2_count_orders",
-      "title": "Count All Orders",
-      "prompt": "Write a query to count the total number of orders.",
+      "id": "q2_select_specific_columns",
+      "title": "Select Specific Columns",
+      "prompt": "Retrieve only the name and email columns from the customers table.",
       "dialect": "duckdb",
-      "hint": "Use COUNT(*) to count rows.",
-      "solution_sql": "SELECT COUNT(*) AS total FROM orders;",
+      "hints": {
+        "tier1": "Instead of using *, you can specify individual column names.",
+        "tier2": "List the column names you want, separated by commas: SELECT col1, col2 FROM...",
+        "tier3": "The syntax is: SELECT name, email FROM customers;"
+      },
+      "solution_sql": "SELECT name, email FROM customers",
       "tests": [
         {
-          "name": "row_count_is_one",
+          "name": "returns_all_rows",
           "assert": "ROWCOUNT",
-          "expected": 1
+          "expected": 5
         },
         {
-          "name": "total_equals_10",
+          "name": "has_exactly_two_columns",
           "assert": "SQL",
-          "sql": "SELECT (SELECT COUNT(*) FROM ({{USER_SQL}}) t) = 1 AS ok",
+          "sql": "SELECT COUNT(DISTINCT column_name) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
           "expected": [{"ok": true}]
         }
       ],
@@ -99,17 +114,21 @@
         "timeout_ms": 1500,
         "row_limit": 1000
       },
-      "tags": ["count", "aggregate"],
+      "tags": ["select", "basics"],
       "difficulty": "easy",
-      "section": "aggregation"
+      "section": "basics"
     },
     {
       "id": "q3_filter_country",
       "title": "Filter by Country",
       "prompt": "Find all customers from Brazil (country = 'Brazil').",
       "dialect": "duckdb",
-      "hint": "Use WHERE to filter rows.",
-      "solution_sql": "SELECT * FROM customers WHERE country = 'Brazil';",
+      "hints": {
+        "tier1": "Use the WHERE clause to filter rows based on a condition.",
+        "tier2": "The WHERE clause comes after FROM. Use = to check equality for text values (remember quotes!).",
+        "tier3": "The syntax is: SELECT * FROM customers WHERE country = 'Brazil';"
+      },
+      "solution_sql": "SELECT * FROM customers WHERE country = 'Brazil'",
       "tests": [
         {
           "name": "returns_three_rows",
@@ -126,22 +145,110 @@
       "section": "basics"
     },
     {
-      "id": "q4_order_by_price",
-      "title": "Order by Price",
-      "prompt": "List all orders sorted by amount in descending order.",
+      "id": "q4_where_greater_than",
+      "title": "Filter Orders Above Amount",
+      "prompt": "Find all orders where the amount is greater than 150.",
       "dialect": "duckdb",
-      "hint": "Use ORDER BY column_name DESC.",
-      "solution_sql": "SELECT * FROM orders ORDER BY amount DESC;",
+      "hints": {
+        "tier1": "Use the WHERE clause with a comparison operator to filter numeric values.",
+        "tier2": "The greater-than operator is >. No quotes needed for numbers.",
+        "tier3": "The syntax is: SELECT * FROM orders WHERE amount > 150;"
+      },
+      "solution_sql": "SELECT * FROM orders WHERE amount > 150",
       "tests": [
         {
-          "name": "returns_all_orders",
+          "name": "returns_correct_count",
           "assert": "ROWCOUNT",
-          "expected": 10
+          "expected": 4
         },
         {
-          "name": "first_row_has_max_amount",
+          "name": "all_amounts_above_150",
           "assert": "SQL",
-          "sql": "SELECT (SELECT amount FROM ({{USER_SQL}}) t LIMIT 1) = (SELECT MAX(amount) FROM orders) AS ok",
+          "sql": "SELECT MIN(amount) > 150 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["where", "filter"],
+      "difficulty": "easy",
+      "section": "basics"
+    },
+    {
+      "id": "q5_where_and",
+      "title": "Multiple Conditions with AND",
+      "prompt": "Find customers from Brazil whose name starts with 'C'. Use the LIKE operator with the pattern 'C%'.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You need to combine two conditions: one for country and one for name pattern.",
+        "tier2": "Use the AND keyword to combine conditions: WHERE condition1 AND condition2. The % wildcard matches any characters.",
+        "tier3": "The syntax is: SELECT * FROM customers WHERE country = 'Brazil' AND name LIKE 'C%';"
+      },
+      "solution_sql": "SELECT * FROM customers WHERE country = 'Brazil' AND name LIKE 'C%'",
+      "tests": [
+        {
+          "name": "returns_one_row",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["where", "filter", "and"],
+      "difficulty": "medium",
+      "section": "basics"
+    },
+    {
+      "id": "q6_where_or",
+      "title": "Multiple Conditions with OR",
+      "prompt": "Find all customers from either Brazil OR USA.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use the OR keyword to match rows that satisfy at least one of the conditions.",
+        "tier2": "The syntax is: WHERE condition1 OR condition2. Each condition checks the country column.",
+        "tier3": "The syntax is: SELECT * FROM customers WHERE country = 'Brazil' OR country = 'USA';"
+      },
+      "solution_sql": "SELECT * FROM customers WHERE country = 'Brazil' OR country = 'USA'",
+      "tests": [
+        {
+          "name": "returns_four_rows",
+          "assert": "ROWCOUNT",
+          "expected": 4
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["where", "filter", "or"],
+      "difficulty": "easy",
+      "section": "basics"
+    },
+    {
+      "id": "q7_order_by_name",
+      "title": "Sort by Name Alphabetically",
+      "prompt": "List all customers sorted by name in alphabetical order (A to Z).",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use the ORDER BY clause to sort results. It comes at the end of your query.",
+        "tier2": "Ascending order (A→Z) is the default, or you can explicitly use ASC.",
+        "tier3": "The syntax is: SELECT * FROM customers ORDER BY name ASC;"
+      },
+      "solution_sql": "SELECT * FROM customers ORDER BY name ASC",
+      "tests": [
+        {
+          "name": "returns_all_customers",
+          "assert": "ROWCOUNT",
+          "expected": 5
+        },
+        {
+          "name": "first_row_alphabetically_first",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT name FROM ({{USER_SQL}}) LIMIT 1) = (SELECT MIN(name) FROM customers) AS ok",
           "expected": [{"ok": true}]
         }
       ],
@@ -151,15 +258,211 @@
       },
       "tags": ["order by", "sorting"],
       "difficulty": "easy",
-      "section": "basics"
+      "section": "sorting"
     },
     {
-      "id": "q5_group_by_customer",
-      "title": "Total Spent per Customer",
-      "prompt": "Calculate the total amount spent by each customer. Return customer_id and total_spent.",
+      "id": "q8_order_by_desc",
+      "title": "Sort Orders by Amount (Highest First)",
+      "prompt": "List all orders sorted by amount in descending order (highest to lowest).",
       "dialect": "duckdb",
-      "hint": "Use GROUP BY customer_id and SUM(amount).",
-      "solution_sql": "SELECT customer_id, SUM(amount) AS total_spent FROM orders GROUP BY customer_id ORDER BY customer_id;",
+      "hints": {
+        "tier1": "Use ORDER BY with the DESC keyword to sort from largest to smallest.",
+        "tier2": "The DESC keyword comes after the column name: ORDER BY column_name DESC",
+        "tier3": "The syntax is: SELECT * FROM orders ORDER BY amount DESC;"
+      },
+      "solution_sql": "SELECT * FROM orders ORDER BY amount DESC",
+      "tests": [
+        {
+          "name": "returns_all_orders",
+          "assert": "ROWCOUNT",
+          "expected": 10
+        },
+        {
+          "name": "first_row_has_max_amount",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT amount FROM ({{USER_SQL}}) LIMIT 1) = (SELECT MAX(amount) FROM orders) AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["order by", "sorting"],
+      "difficulty": "easy",
+      "section": "sorting"
+    },
+    {
+      "id": "q9_order_multiple",
+      "title": "Sort by Multiple Columns",
+      "prompt": "List all orders sorted first by customer_id (ascending), then by amount (descending) for orders from the same customer.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You can sort by multiple columns by listing them after ORDER BY, separated by commas.",
+        "tier2": "Each column can have its own sort direction (ASC or DESC). The first column is the primary sort.",
+        "tier3": "The syntax is: SELECT * FROM orders ORDER BY customer_id ASC, amount DESC;"
+      },
+      "solution_sql": "SELECT * FROM orders ORDER BY customer_id ASC, amount DESC",
+      "tests": [
+        {
+          "name": "returns_all_orders",
+          "assert": "ROWCOUNT",
+          "expected": 10
+        },
+        {
+          "name": "first_customer_id_is_smallest",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT customer_id FROM ({{USER_SQL}}) LIMIT 1) = (SELECT MIN(customer_id) FROM orders) AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["order by", "sorting"],
+      "difficulty": "medium",
+      "section": "sorting"
+    },
+    {
+      "id": "q10_count_all",
+      "title": "Count Total Orders",
+      "prompt": "Write a query to count the total number of orders. Name the result column 'total'.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use the COUNT() aggregate function to count rows.",
+        "tier2": "COUNT(*) counts all rows. Use AS to rename the column.",
+        "tier3": "The syntax is: SELECT COUNT(*) AS total FROM orders;"
+      },
+      "solution_sql": "SELECT COUNT(*) AS total FROM orders",
+      "tests": [
+        {
+          "name": "row_count_is_one",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        },
+        {
+          "name": "returns_single_value",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT COUNT(*) FROM ({{USER_SQL}})) = 1 AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["count", "aggregate"],
+      "difficulty": "easy",
+      "section": "aggregation"
+    },
+    {
+      "id": "q11_sum_total",
+      "title": "Calculate Total Revenue",
+      "prompt": "Calculate the sum of all order amounts. Name the result column 'total_revenue'.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use the SUM() aggregate function to add up numeric values.",
+        "tier2": "Put the column name inside SUM(): SUM(column_name). Don't forget to use AS for the alias.",
+        "tier3": "The syntax is: SELECT SUM(amount) AS total_revenue FROM orders;"
+      },
+      "solution_sql": "SELECT SUM(amount) AS total_revenue FROM orders",
+      "tests": [
+        {
+          "name": "returns_single_row",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        },
+        {
+          "name": "sum_is_correct",
+          "assert": "SQL",
+          "sql": "SELECT CAST((SELECT total_revenue FROM ({{USER_SQL}})) AS INTEGER) = 1650 AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["sum", "aggregate"],
+      "difficulty": "easy",
+      "section": "aggregation"
+    },
+    {
+      "id": "q12_avg_amount",
+      "title": "Calculate Average Order Amount",
+      "prompt": "Find the average order amount. Name the result column 'avg_amount'.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use the AVG() aggregate function to calculate the mean of numeric values.",
+        "tier2": "The syntax is similar to SUM: AVG(column_name) AS alias_name",
+        "tier3": "The syntax is: SELECT AVG(amount) AS avg_amount FROM orders;"
+      },
+      "solution_sql": "SELECT AVG(amount) AS avg_amount FROM orders",
+      "tests": [
+        {
+          "name": "returns_single_row",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        },
+        {
+          "name": "has_correct_column_name",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 1 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name = 'avg_amount'",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["avg", "aggregate"],
+      "difficulty": "easy",
+      "section": "aggregation"
+    },
+    {
+      "id": "q13_min_max",
+      "title": "Find Minimum and Maximum Amounts",
+      "prompt": "Find both the minimum and maximum order amounts in a single query. Name the columns 'min_amount' and 'max_amount'.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You can use multiple aggregate functions in the same SELECT statement, separated by commas.",
+        "tier2": "Use MIN() for the smallest value and MAX() for the largest value.",
+        "tier3": "The syntax is: SELECT MIN(amount) AS min_amount, MAX(amount) AS max_amount FROM orders;"
+      },
+      "solution_sql": "SELECT MIN(amount) AS min_amount, MAX(amount) AS max_amount FROM orders",
+      "tests": [
+        {
+          "name": "returns_single_row",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        },
+        {
+          "name": "has_two_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["min", "max", "aggregate"],
+      "difficulty": "easy",
+      "section": "aggregation"
+    },
+    {
+      "id": "q14_group_by_customer",
+      "title": "Total Spent per Customer",
+      "prompt": "Calculate the total amount spent by each customer. Return customer_id and total_spent, ordered by customer_id.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use GROUP BY to group rows by customer_id, then SUM the amounts for each group.",
+        "tier2": "When using GROUP BY, any column in SELECT that isn't aggregated must appear in GROUP BY.",
+        "tier3": "The syntax is: SELECT customer_id, SUM(amount) AS total_spent FROM orders GROUP BY customer_id ORDER BY customer_id;"
+      },
+      "solution_sql": "SELECT customer_id, SUM(amount) AS total_spent FROM orders GROUP BY customer_id ORDER BY customer_id",
       "tests": [
         {
           "name": "returns_correct_number_of_customers",
@@ -169,7 +472,7 @@
         {
           "name": "has_correct_columns",
           "assert": "SQL",
-          "sql": "SELECT COUNT(DISTINCT column_name) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}}))",
           "expected": [{"ok": true}]
         }
       ],
@@ -178,6 +481,70 @@
         "row_limit": 1000
       },
       "tags": ["group by", "aggregate", "sum"],
+      "difficulty": "medium",
+      "section": "aggregation"
+    },
+    {
+      "id": "q15_group_count",
+      "title": "Count Orders per Customer",
+      "prompt": "Count how many orders each customer has placed. Return customer_id and order_count, ordered by order_count descending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use GROUP BY customer_id and COUNT to count orders for each customer.",
+        "tier2": "COUNT(*) counts all rows in each group. ORDER BY can sort by the aggregated column.",
+        "tier3": "The syntax is: SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id ORDER BY order_count DESC;"
+      },
+      "solution_sql": "SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id ORDER BY order_count DESC",
+      "tests": [
+        {
+          "name": "returns_five_customers",
+          "assert": "ROWCOUNT",
+          "expected": 5
+        },
+        {
+          "name": "first_customer_has_most_orders",
+          "assert": "SQL",
+          "sql": "SELECT (SELECT order_count FROM ({{USER_SQL}}) LIMIT 1) >= ALL(SELECT COUNT(*) FROM orders GROUP BY customer_id) AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["group by", "count", "aggregate"],
+      "difficulty": "medium",
+      "section": "aggregation"
+    },
+    {
+      "id": "q16_having_filter",
+      "title": "Customers with Multiple Orders",
+      "prompt": "Find customers who have placed more than 1 order. Return customer_id and order_count, ordered by customer_id.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "First group by customer and count orders, then filter the groups using HAVING.",
+        "tier2": "HAVING is like WHERE but for groups. It comes after GROUP BY: HAVING COUNT(*) > 1",
+        "tier3": "The syntax is: SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id HAVING COUNT(*) > 1 ORDER BY customer_id;"
+      },
+      "solution_sql": "SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id HAVING COUNT(*) > 1 ORDER BY customer_id",
+      "tests": [
+        {
+          "name": "returns_customers_with_multiple_orders",
+          "assert": "SQL",
+          "sql": "SELECT MIN(order_count) > 1 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "correct_number_of_customers",
+          "assert": "ROWCOUNT",
+          "expected": 4
+        }
+      ],
+      "limits": {
+        "timeout_ms": 1500,
+        "row_limit": 1000
+      },
+      "tags": ["group by", "having", "aggregate"],
       "difficulty": "medium",
       "section": "aggregation"
     }

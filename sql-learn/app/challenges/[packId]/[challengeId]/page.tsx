@@ -9,6 +9,7 @@ import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { KeyboardShortcuts } from "@/app/components/KeyboardShortcuts";
 import { Confetti } from "@/app/components/Confetti";
 import { AnimatedNumber } from "@/app/components/AnimatedNumber";
+import { useTranslation } from "@/app/lib/useTranslation";
 import { loadPack, loadPackDatasets } from "@/app/lib/pack";
 import { gradeQuery } from "@/app/lib/grader";
 import { executeQuery, getTableSchema } from "@/app/lib/duck";
@@ -17,6 +18,7 @@ import { logChallengeAttempt } from "@/app/lib/telemetry";
 import type { Challenge, GradeResult, PackSchema } from "@/app/lib/types";
 
 export default function ChallengePage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const packId = params.packId as string;
@@ -30,7 +32,7 @@ export default function ChallengePage() {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showHint, setShowHint] = useState(false);
+  const [hintLevel, setHintLevel] = useState(0); // 0 = none, 1 = tier1, 2 = tier2, 3 = tier3
   const [showSolution, setShowSolution] = useState(false);
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   const [tableSchemas, setTableSchemas] = useState<Record<string, Array<{ name: string; type: string }>>>({});
@@ -83,9 +85,22 @@ export default function ChallengePage() {
   }, [packId, challengeId]);
 
   // Keyboard shortcuts
-  const handleRunCallback = useCallback(async () => {
+  const handleRunQuery = useCallback(async () => {
     if (!sql.trim() || running) return;
-    await handleRun();
+    
+    setRunning(true);
+    setError(null);
+    setResults([]);
+    setGradeResult(null);
+
+    try {
+      const data = await executeQuery(sql);
+      setResults(data as Record<string, unknown>[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Query execution failed");
+    } finally {
+      setRunning(false);
+    }
   }, [sql, running]);
 
   useEffect(() => {
@@ -93,7 +108,7 @@ export default function ChallengePage() {
       // Ctrl/Cmd + Enter to run query
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
-        handleRunCallback();
+        handleRunQuery();
       }
       // Escape to clear results
       if (e.key === "Escape") {
@@ -108,27 +123,10 @@ export default function ChallengePage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleRunCallback, gradeResult, results, error]);
+  }, [handleRunQuery, gradeResult, results, error]);
 
-  async function handleRun() {
-    if (!sql.trim()) {
-      setError("Please enter a SQL query");
-      return;
-    }
-
-    setRunning(true);
-    setError(null);
-    setResults([]);
-    setGradeResult(null);
-
-    try {
-      const data = await executeQuery(sql);
-      setResults(data as Record<string, unknown>[]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Query execution failed");
-    } finally {
-      setRunning(false);
-    }
+  function handleRun() {
+    handleRunQuery();
   }
 
   async function handleSubmit() {
@@ -194,7 +192,7 @@ export default function ChallengePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb Skeleton */}
           <div className="mb-6">
@@ -263,11 +261,11 @@ export default function ChallengePage() {
           {/* Loading Message with Animation */}
           <div className="fixed bottom-8 right-8 bg-white rounded-xl shadow-lg border border-gray-200 px-6 py-4 flex items-center gap-3">
             <div className="flex gap-1 loading-dots">
-              <span className="w-2 h-2 bg-blue-600 rounded-full inline-block"></span>
-              <span className="w-2 h-2 bg-blue-600 rounded-full inline-block"></span>
-              <span className="w-2 h-2 bg-blue-600 rounded-full inline-block"></span>
+              <span className="w-2 h-2 bg-teal-600 rounded-full inline-block"></span>
+              <span className="w-2 h-2 bg-teal-600 rounded-full inline-block"></span>
+              <span className="w-2 h-2 bg-teal-600 rounded-full inline-block"></span>
             </div>
-            <p className="text-sm font-medium text-gray-700">Preparing your SQL playground</p>
+            <p className="text-sm font-medium text-gray-700">{t("challenge.loading_message")}</p>
           </div>
         </div>
       </div>
@@ -276,7 +274,7 @@ export default function ChallengePage() {
 
   if (error && !challenge) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-teal-50">
         <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-8 max-w-md">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
@@ -284,11 +282,11 @@ export default function ChallengePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Error</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("challenge.error_title")}</h2>
           </div>
           <p className="text-red-600 mb-4">{error}</p>
           <Link href="/" className="btn-primary inline-block">
-            Return to Challenges
+            {t("challenge.back_to_challenges")}
           </Link>
         </div>
       </div>
@@ -297,7 +295,7 @@ export default function ChallengePage() {
 
   if (!challenge || !pack) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-teal-50">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 max-w-md text-center">
           <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -321,7 +319,7 @@ export default function ChallengePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
       {/* Enhanced Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -329,24 +327,24 @@ export default function ChallengePage() {
             <div className="flex items-center gap-4">
               <Link
                 href={`/packs/${packId}`}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors group"
+                className="flex items-center gap-2 text-teal-600 hover:text-teal-800 font-medium transition-colors group"
                 aria-label="Back to challenges"
               >
                 <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                <span className="hidden sm:inline">Back to Challenges</span>
+                <span className="hidden sm:inline">{t("challenge.back_to_challenges")}</span>
               </Link>
               <div className="h-6 w-px bg-gray-300 hidden sm:block" />
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-gray-900">{challenge.title}</h1>
                   {progress?.completed && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
-                      Completed
+                      {t("challenge.completed_badge")}
                     </div>
                   )}
                 </div>
@@ -359,7 +357,7 @@ export default function ChallengePage() {
                   {progress && (
                     <>
                       <span>•</span>
-                      <span>Attempts: {progress.attempts}</span>
+                      <span>{t("challenge.attempts")}: {progress.attempts}</span>
                     </>
                   )}
                 </div>
@@ -384,8 +382,8 @@ export default function ChallengePage() {
             {/* Challenge Description */}
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
@@ -395,10 +393,10 @@ export default function ChallengePage() {
 
               {progress?.completed && progress.bestTime && (
                 <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2 text-sm">
-                  <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-green-700 font-medium">
+                  <span className="text-emerald-700 font-medium">
                     Best time: {progress.bestTime.toFixed(0)}ms
                   </span>
                 </div>
@@ -408,12 +406,12 @@ export default function ChallengePage() {
             {/* Available Tables */}
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-gray-900">Available Tables</h3>
+                <h3 className="font-bold text-gray-900">{t("challenge.available_tables")}</h3>
               </div>
               <div className="space-y-3">
                 {pack.datasets.map((ds) => (
@@ -424,7 +422,7 @@ export default function ChallengePage() {
                       className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="flex items-center gap-2">
-                        <svg className={`w-4 h-4 text-purple-600 transition-transform ${expandedTables.has(ds.name) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-4 h-4 text-indigo-600 transition-transform ${expandedTables.has(ds.name) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                         <span className="font-mono font-medium text-gray-900">{ds.name}</span>
@@ -437,21 +435,25 @@ export default function ChallengePage() {
                     </button>
 
                     {expandedTables.has(ds.name) && (
-                      <div className="border-t border-gray-200 bg-gray-50">
+                      <div className="border-t border-gray-200 bg-gray-50 slide-down">
                         {tableSchemas[ds.name] ? (
                           <div className="p-3">
                             <div className="space-y-2">
-                              {tableSchemas[ds.name].map((column) => (
-                                <div key={column.name} className="flex items-center justify-between text-sm bg-white rounded px-3 py-2 border border-gray-200">
+                              {tableSchemas[ds.name].map((column, idx) => (
+                                <div
+                                  key={column.name}
+                                  className="flex items-center justify-between text-sm bg-white rounded px-3 py-2 border border-gray-200 stagger-fade-in"
+                                  style={{ animationDelay: `${idx * 30}ms` }}
+                                >
                                   <span className="font-mono font-medium text-gray-900">{column.name}</span>
-                                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-mono">{column.type}</span>
+                                  <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-mono">{column.type}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
                         ) : (
                           <div className="p-3 text-center">
-                            <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+                            <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
                             <p className="text-xs text-gray-500 mt-2">Loading schema...</p>
                           </div>
                         )}
@@ -465,33 +467,120 @@ export default function ChallengePage() {
             {/* Keyboard Shortcuts */}
             <KeyboardShortcuts />
 
-            {/* Hint */}
-            {challenge.hint && (
+            {/* Progressive Hints */}
+            {(challenge.hints || challenge.hint) && (
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-                <button
-                  onClick={() => setShowHint(!showHint)}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg p-1 -m-1"
-                  aria-expanded={showHint}
-                  aria-controls="hint-content"
-                >
-                  <svg className={`w-5 h-5 transition-transform duration-300 ${showHint ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <div className="flex items-center gap-2 text-teal-600 font-semibold mb-4">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
-                  <span className="flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                    {showHint ? "Hide Hint" : "Need a Hint?"}
-                  </span>
-                </button>
-                {showHint && (
-                  <div id="hint-content" className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in duration-300">
-                    <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hint}</p>
-                    </div>
+                  <span>{t("challenge.hints_title")}</span>
+                </div>
+
+                {/* Progressive hint buttons and content */}
+                {challenge.hints ? (
+                  <div className="space-y-3">
+                    {/* Tier 1: Gentle Nudge */}
+                    {challenge.hints.tier1 && (
+                      <div>
+                        {hintLevel < 1 ? (
+                          <button
+                            onClick={() => setHintLevel(1)}
+                            className="w-full px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          >
+                            {t("challenge.hint_tier1")}
+                          </button>
+                        ) : (
+                          <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg slide-down">
+                            <div className="flex items-start gap-2">
+                              <span className="text-lg">💡</span>
+                              <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hints.tier1}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tier 2: More Direction */}
+                    {challenge.hints.tier2 && hintLevel >= 1 && (
+                      <div>
+                        {hintLevel < 2 ? (
+                          <button
+                            onClick={() => setHintLevel(2)}
+                            className="w-full px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          >
+                            {t("challenge.hint_tier2")}
+                          </button>
+                        ) : (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg slide-down">
+                            <div className="flex items-start gap-2">
+                              <span className="text-lg">🎯</span>
+                              <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hints.tier2}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tier 3: Near-Solution */}
+                    {challenge.hints.tier3 && hintLevel >= 2 && (
+                      <div>
+                        {hintLevel < 3 ? (
+                          <button
+                            onClick={() => setHintLevel(3)}
+                            className="w-full px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            {t("challenge.hint_tier3")}
+                          </button>
+                        ) : (
+                          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg slide-down">
+                            <div className="flex items-start gap-2">
+                              <span className="text-lg">🔥</span>
+                              <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hints.tier3}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Reset hints button */}
+                    {hintLevel > 0 && (
+                      <button
+                        onClick={() => setHintLevel(0)}
+                        className="text-xs text-gray-500 hover:text-gray-700 mt-2"
+                      >
+                        {t("challenge.hide_hints")}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  /* Fallback for old single-hint format */
+                  <div>
+                    {hintLevel === 0 ? (
+                      <button
+                        onClick={() => setHintLevel(1)}
+                        className="w-full px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      >
+                        💡 Show Hint
+                      </button>
+                    ) : (
+                      <>
+                        <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg slide-down">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hint}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setHintLevel(0)}
+                          className="text-xs text-gray-500 hover:text-gray-700 mt-2"
+                        >
+                          Hide hint
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -512,15 +601,25 @@ export default function ChallengePage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  {showSolution ? "Hide Solution" : "View Solution"}
+                  {showSolution ? t("challenge.hide_solution") : t("challenge.view_solution")}
                 </span>
               </button>
               {showSolution && (
                 <div id="solution-content" className="mt-4 animate-in fade-in duration-300">
                   <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-sm text-amber-900">
-                      <strong>💡 Learning Tip:</strong> Try to understand <em>why</em> this solution works, not just copy it. What SQL concepts does it use?
+                      {t("challenge.solution_warning")}
                     </p>
+                  </div>
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      <p className="text-sm text-blue-900">
+                        💡 <strong>Learning Tip:</strong> Try to understand why this solution works, not just copy it. Look at each part of the query and think about what it does.
+                      </p>
+                    </div>
                   </div>
                   <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg text-sm overflow-x-auto font-mono">
                     {challenge.solution_sql}
@@ -536,12 +635,12 @@ export default function ChallengePage() {
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
                   </div>
-                  <h2 className="text-lg font-bold text-gray-900">Your SQL</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{t("challenge.your_sql")}</h2>
                 </div>
                 {sql.trim() && (
                   <button
@@ -551,7 +650,7 @@ export default function ChallengePage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Clear
+                    {t("challenge.clear")}
                   </button>
                 )}
               </div>
@@ -572,7 +671,7 @@ export default function ChallengePage() {
                         <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                         <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                       </div>
-                      <span>Running...</span>
+                      <span>{t("challenge.running")}</span>
                     </>
                   ) : (
                     <>
@@ -580,7 +679,7 @@ export default function ChallengePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Run Query
+                      {t("challenge.run_query")}
                     </>
                   )}
                 </button>
@@ -596,14 +695,14 @@ export default function ChallengePage() {
                         <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                         <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                       </div>
-                      <span>Submitting...</span>
+                      <span>{t("challenge.submitting")}</span>
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Submit Answer
+                      {t("challenge.submit_answer")}
                     </>
                   )}
                 </button>
@@ -624,7 +723,7 @@ export default function ChallengePage() {
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-bold text-red-900 mb-1">Error</h4>
+                    <h4 className="font-bold text-red-900 mb-1">{t("challenge.error_title")}</h4>
                     <p className="text-red-700 text-sm">{error}</p>
                   </div>
                 </div>
@@ -633,10 +732,10 @@ export default function ChallengePage() {
 
             {/* Grade Result */}
             {gradeResult && (
-              <div 
+              <div
                 className={`border-2 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top ${
                   gradeResult.pass
-                    ? "bg-green-50 border-green-200"
+                    ? "bg-emerald-50 border-emerald-200"
                     : "bg-red-50 border-red-200"
                 }`}
                 role={gradeResult.pass ? "status" : "alert"}
@@ -644,14 +743,14 @@ export default function ChallengePage() {
                 aria-atomic="true"
               >
                 <div className="flex items-start gap-3 mb-4">
-                  <div 
+                  <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      gradeResult.pass ? "bg-green-100" : "bg-red-100"
+                      gradeResult.pass ? "bg-emerald-100" : "bg-red-100"
                     }`}
                     aria-hidden="true"
                   >
                     {gradeResult.pass ? (
-                      <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     ) : (
@@ -662,17 +761,17 @@ export default function ChallengePage() {
                   </div>
                   <div className="flex-1">
                     <h3 className={`font-bold text-lg mb-2 ${
-                      gradeResult.pass ? "text-green-900" : "text-red-900"
+                      gradeResult.pass ? "text-emerald-900" : "text-red-900"
                     }`}>
-                      {gradeResult.pass ? "🎉 Perfect! Challenge Complete!" : "Not Quite Right"}
+                      {gradeResult.pass ? t("challenge.success_title") : t("challenge.not_quite_title")}
                     </h3>
                     {gradeResult.pass ? (
-                      <p className="text-sm text-green-700 mb-3">
-                        Excellent work! You&apos;ve mastered this SQL concept. Ready for the next challenge?
+                      <p className="text-sm text-emerald-700 mb-3">
+                        {t("challenge.success_message")}
                       </p>
                     ) : (
                       <p className="text-sm text-red-700 mb-3">
-                        Don&apos;t worry! Review the failing tests below, adjust your query, and try again. You&apos;re learning!
+                        {t("challenge.not_quite_message")}
                       </p>
                     )}
                     <ul className="space-y-2">
@@ -684,7 +783,7 @@ export default function ChallengePage() {
                         >
                           <span className="flex-shrink-0 mt-0.5">
                             {check.pass ? (
-                              <svg className="w-5 h-5 text-green-600 animate-bounce-in" fill="none" stroke="currentColor" viewBox="0 0 20 20" strokeWidth={2}>
+                              <svg className="w-5 h-5 text-emerald-600 animate-bounce-in" fill="none" stroke="currentColor" viewBox="0 0 20 20" strokeWidth={2}>
                                 <path className="checkmark-draw" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
@@ -693,7 +792,7 @@ export default function ChallengePage() {
                               </svg>
                             )}
                           </span>
-                          <div className={gradeResult.pass ? "text-green-800" : "text-red-800"}>
+                          <div className={gradeResult.pass ? "text-emerald-800" : "text-red-800"}>
                             <span className="font-medium">{check.name}</span>
                             {check.message && (
                               <span className="block text-xs mt-0.5 opacity-75">{check.message}</span>
@@ -703,7 +802,7 @@ export default function ChallengePage() {
                       ))}
                     </ul>
                     <div className={`mt-4 pt-4 border-t flex items-center gap-4 text-sm ${
-                      gradeResult.pass ? "border-green-200 text-green-700" : "border-red-200 text-red-700"
+                      gradeResult.pass ? "border-emerald-200 text-emerald-700" : "border-red-200 text-red-700"
                     }`}>
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -733,7 +832,7 @@ export default function ChallengePage() {
                     </svg>
                   </div>
                   <h3 className="font-bold text-gray-900">
-                    Results <span className="text-sm font-normal text-gray-500">({results.length} rows)</span>
+                    {results.length === 1 ? t("challenge.results_title", { count: results.length }) : t("challenge.results_title_plural", { count: results.length })}
                   </h3>
                 </div>
                 <ResultGrid data={results} />

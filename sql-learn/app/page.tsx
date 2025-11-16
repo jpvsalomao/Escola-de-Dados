@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PackCard } from "./components/PackCard";
 import { PackCardSkeleton } from "./components/PackCardSkeleton";
+import { WelcomeModal } from "./components/WelcomeModal";
 import { getAvailablePacks, loadPack } from "./lib/pack";
 import { getPackCompletionPercentage } from "./lib/progress";
 import type { PackSchema } from "./lib/types";
@@ -65,7 +66,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
         {/* Hero Header Skeleton */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -152,13 +153,13 @@ export default function HomePage() {
   const completedPacks = packs.filter(p => p.completionPercentage === 100).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50">
       {/* Hero Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-4 mb-4">
-            <div 
-              className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg"
+            <div
+              className="w-16 h-16 bg-gradient-to-br from-teal-600 to-cyan-700 rounded-xl flex items-center justify-center shadow-lg"
               aria-hidden="true"
             >
               <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,10 +174,10 @@ export default function HomePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8" role="region" aria-label="Learning statistics">
-            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-blue">
+            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-teal">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center" aria-hidden="true">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center" aria-hidden="true">
+                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
@@ -187,10 +188,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-purple">
+            <div className="glass-strong rounded-xl p-4 border border-white/50 shadow-lg hover-glow-coral">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center" aria-hidden="true">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center" aria-hidden="true">
+                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
@@ -269,6 +270,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Welcome Modal for first-time users */}
+      <WelcomeModal />
     </div>
   );
 }

@@ -320,8 +320,29 @@ Core types in `app/lib/types.ts`:
 
 ## Styling
 
-The project uses Tailwind CSS with custom utility functions:
+The project uses Tailwind CSS with a custom design system defined in `docs/DESIGN_SYSTEM.md`.
+
+### Design System v2.0 (November 2025)
+
+**Signature Color Palette:**
+- **Primary (Teal)**: Database/data theme - `teal-600` (#0D9488)
+- **Accent (Coral)**: Energy/engagement - `orange-600` (#F97316)
+- **Success (Emerald)**: Achievement - `emerald-500` (#10B981)
+- **Code (Indigo)**: Technical elements - `indigo-500` (#6366F1)
+
+**Key Changes from v1.0:**
+- Moved from generic blue/purple/pink to distinctive teal/coral palette
+- Added gradient text for heroes and headings
+- Enhanced button styles with new colors and hover effects
+- Gradient border effects on cards
+- Status strip indicators on challenge cards
+
+**Utility Functions:**
 - `getSectionColorClasses(section)` - Returns color classes for sections
 - `getDifficultyColorClasses(difficulty)` - Returns color classes for difficulty levels
 
 These are defined in `app/lib/ui-constants.tsx`.
+
+**Important CSS Files:**
+- `app/globals.css` - Design tokens, animations, component classes
+- `docs/DESIGN_SYSTEM.md` - Complete design system documentation
