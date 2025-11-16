@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { PackCard } from "./components/PackCard";
 import { PackCardSkeleton } from "./components/PackCardSkeleton";
 import { WelcomeModal } from "./components/WelcomeModal";
@@ -171,6 +172,40 @@ export default function HomePage() {
               <p className="text-gray-600 mt-2 text-xl">Interactive SQL challenges from Escola de Dados</p>
             </div>
           </div>
+
+          {/* Learn Concepts Banner */}
+          <Link
+            href="/concepts"
+            className="group block mt-8 bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 rounded-2xl p-5 border border-teal-200 hover:border-teal-300 transition-all duration-300 hover:shadow-lg shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            aria-label="Learn SQL concepts before starting challenges"
+          >
+            <div className="flex items-center justify-between gap-4">
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
+                    📚 New to SQL? Start with the Concepts
+                  </h3>
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-teal-100 text-teal-700 rounded-md text-xs font-semibold border border-teal-200">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    Beginner Friendly
+                  </span>
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Learn SQL fundamentals with clear explanations, interactive examples, and visual demonstrations. Perfect for beginners or as a refresher before tackling challenges.
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex-shrink-0 text-teal-600 group-hover:translate-x-1 transition-transform duration-200">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </div>
+            </div>
+          </Link>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8" role="region" aria-label="Learning statistics">
