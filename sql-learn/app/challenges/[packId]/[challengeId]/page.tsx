@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Editor } from "@/app/components/Editor";
@@ -38,6 +38,7 @@ export default function ChallengePage() {
   const [tableSchemas, setTableSchemas] = useState<Record<string, Array<{ name: string; type: string }>>>({});
   const [duckdbReady, setDuckdbReady] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     async function loadData() {
@@ -141,21 +142,31 @@ export default function ChallengePage() {
 
     try {
       const result = await gradeQuery(sql, challenge.tests);
-      setGradeResult(result);
 
       if (result.pass) {
-        markCompleted(packId, challengeId, result.stats.elapsedMs);
-        logChallengeAttempt(packId, challengeId, true, result.stats.elapsedMs);
-        // Trigger confetti celebration
+        // 🎯 OPTIMIZATION: Trigger confetti IMMEDIATELY for instant feedback
         setShowConfetti(true);
+
+        // Defer expensive operations to avoid blocking confetti animation
+        queueMicrotask(() => {
+          markCompleted(packId, challengeId, result.stats.elapsedMs);
+          logChallengeAttempt(packId, challengeId, true, result.stats.elapsedMs);
+        });
+
+        // Use startTransition for non-urgent UI updates
+        startTransition(() => {
+          setGradeResult(result);
+          setRunning(false);
+        });
       } else {
         recordAttempt(packId, challengeId);
         logChallengeAttempt(packId, challengeId, false, result.stats.elapsedMs);
+        setGradeResult(result);
+        setRunning(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Grading failed");
       recordAttempt(packId, challengeId);
-    } finally {
       setRunning(false);
     }
   }
@@ -607,17 +618,12 @@ export default function ChallengePage() {
               {showSolution && (
                 <div id="solution-content" className="mt-4 animate-in fade-in duration-300">
                   <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-900">
-                      {t("challenge.solution_warning")}
-                    </p>
-                  </div>
-                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
-                      <p className="text-sm text-blue-900">
-                        💡 <strong>Learning Tip:</strong> Try to understand why this solution works, not just copy it. Look at each part of the query and think about what it does.
+                      <p className="text-sm text-amber-900">
+                        💡 <strong>{t("challenge.solution_warning_title")}</strong> {t("challenge.solution_warning")}
                       </p>
                     </div>
                   </div>
@@ -808,13 +814,13 @@ export default function ChallengePage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <AnimatedNumber value={gradeResult.stats.elapsedMs} decimals={2} suffix="ms" />
+                        <AnimatedNumber value={gradeResult.stats.elapsedMs} decimals={2} suffix="ms" delay={300} />
                       </div>
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        <AnimatedNumber value={gradeResult.stats.rowsReturned} decimals={0} suffix=" rows" />
+                        <AnimatedNumber value={gradeResult.stats.rowsReturned} decimals={0} suffix=" rows" delay={300} />
                       </div>
                     </div>
                   </div>

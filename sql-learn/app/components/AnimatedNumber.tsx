@@ -8,6 +8,7 @@ interface AnimatedNumberProps {
   className?: string;
   suffix?: string;
   decimals?: number;
+  delay?: number; // Delay before starting animation (ms)
 }
 
 export function AnimatedNumber({
@@ -16,31 +17,37 @@ export function AnimatedNumber({
   className = "",
   suffix = "",
   decimals = 0,
+  delay = 0,
 }: AnimatedNumberProps) {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    const startTime = Date.now();
-    const startValue = displayValue;
+    // 🎯 OPTIMIZATION: Delay animation to avoid competing with confetti
+    const delayTimer = setTimeout(() => {
+      const startTime = Date.now();
+      const startValue = displayValue;
 
-    const animate = () => {
-      const now = Date.now();
-      const progress = Math.min((now - startTime) / duration, 1);
+      const animate = () => {
+        const now = Date.now();
+        const progress = Math.min((now - startTime) / duration, 1);
 
-      // Easing function (ease-out cubic)
-      const easeOut = 1 - Math.pow(1 - progress, 3);
+        // Easing function (ease-out cubic)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
 
-      const currentValue = startValue + (value - startValue) * easeOut;
+        const currentValue = startValue + (value - startValue) * easeOut;
 
-      setDisplayValue(currentValue);
+        setDisplayValue(currentValue);
 
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
 
-    requestAnimationFrame(animate);
-  }, [value, duration]);
+      requestAnimationFrame(animate);
+    }, delay);
+
+    return () => clearTimeout(delayTimer);
+  }, [value, duration, delay, displayValue]);
 
   return (
     <span className={className}>

@@ -20,6 +20,7 @@ interface Particle {
 
 export function Confetti({ active, onComplete }: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Particle[]>([]);
 
   useEffect(() => {
     if (!active || !canvasRef.current) return;
@@ -28,31 +29,48 @@ export function Confetti({ active, onComplete }: ConfettiProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas size to window
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // 🎯 OPTIMIZATION: Use getBoundingClientRect to avoid layout thrashing
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
-    const particles: Particle[] = [];
-    const particleCount = 150;
+    // 🎯 OPTIMIZATION: Reduced particle count from 150 to 100 for better performance
+    const particleCount = 100;
     const colors = [
-      "#3b82f6", // blue
-      "#10b981", // green
-      "#f59e0b", // amber
-      "#ec4899", // pink
-      "#8b5cf6", // purple
+      "#0D9488", // teal-600 (Design System v2.0)
+      "#10b981", // emerald-500
+      "#F97316", // orange-600 (coral accent)
+      "#6366F1", // indigo-500
+      "#8b5cf6", // purple-500
     ];
 
-    // Create particles
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height - canvas.height,
-        vx: (Math.random() - 0.5) * 6,
-        vy: Math.random() * 3 + 2,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 8 + 4,
-        rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 10,
+    // 🎯 OPTIMIZATION: Reuse particle array if already initialized
+    if (particlesRef.current.length === 0) {
+      // Pre-allocate array for better memory performance
+      const particles: Particle[] = new Array(particleCount);
+
+      for (let i = 0; i < particleCount; i++) {
+        particles[i] = {
+          x: Math.random() * rect.width,
+          y: Math.random() * rect.height - rect.height,
+          vx: (Math.random() - 0.5) * 6,
+          vy: Math.random() * 3 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 8 + 4,
+          rotation: Math.random() * 360,
+          rotationSpeed: (Math.random() - 0.5) * 10,
+        };
+      }
+
+      particlesRef.current = particles;
+    } else {
+      // Reset existing particles to starting positions
+      particlesRef.current.forEach((particle) => {
+        particle.x = Math.random() * rect.width;
+        particle.y = Math.random() * rect.height - rect.height;
+        particle.vx = (Math.random() - 0.5) * 6;
+        particle.vy = Math.random() * 3 + 2;
+        particle.rotation = Math.random() * 360;
       });
     }
 
@@ -67,7 +85,8 @@ export function Confetti({ active, onComplete }: ConfettiProps) {
 
       let activeParticles = 0;
 
-      particles.forEach((particle) => {
+      // Use particlesRef.current for better performance
+      particlesRef.current.forEach((particle) => {
         // Update position
         particle.vy += gravity;
         particle.vx *= friction;
@@ -115,7 +134,13 @@ export function Confetti({ active, onComplete }: ConfettiProps) {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ width: "100vw", height: "100vh" }}
+      style={{
+        width: "100vw",
+        height: "100vh",
+        // 🎯 OPTIMIZATION: CSS performance hints
+        willChange: "transform",
+        contain: "layout style paint",
+      }}
     />
   );
 }
