@@ -16,7 +16,11 @@ docs/sprints/
 ├── README.md           # This file
 ├── sprint-7/           # Filter-based skills
 │   └── plan.md
-├── sprint-8/           # Current sprint
+├── sprint-8/           # Sprint system setup
+│   └── plan.md
+├── sprint-9/           # Challenge validation
+│   └── plan.md
+├── sprint-10/          # Interview cheatsheet
 │   └── plan.md
 └── archive/            # Historical reference
     └── sprints-1-6-summary.md
@@ -26,6 +30,8 @@ docs/sprints/
 
 | Sprint | Title | Status |
 |--------|-------|--------|
+| 10 | Interview Cheatsheet | Complete |
+| 9 | Challenge Validation & Ordering | Complete |
 | 8 | Sprint System Setup & UI Polish | Complete |
 | 7 | Filter-based Skills Organization | Complete |
 
