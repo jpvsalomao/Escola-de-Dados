@@ -8,6 +8,12 @@ export interface SkillCategory {
   icon: string;
   description: string;
   matchPatterns: string[];
+  // Mental model section - based on actual pack challenges
+  mentalModel: {
+    coreIdea: string;
+    recognizeIt: string[];  // How to spot this problem type from actual challenges
+    approach: string;       // Step-by-step thinking
+  };
   patterns: PatternDefinition[];
 }
 
@@ -18,7 +24,7 @@ export interface PatternDefinition {
   pitfall?: string;
 }
 
-// Curated cheatsheet content organized by skill category
+// Curated cheatsheet content based on pack_meta_interview challenges
 export const CHEATSHEET_CATEGORIES: SkillCategory[] = [
   {
     id: "aggregation",
@@ -27,6 +33,16 @@ export const CHEATSHEET_CATEGORIES: SkillCategory[] = [
     icon: "calculator",
     description: "GROUP BY, HAVING, conditional counts",
     matchPatterns: ["Aggregation", "COUNT", "HAVING", "First Value", "Conditional Counting"],
+    mentalModel: {
+      coreIdea: "Transform rows into summaries. Think: 'For each user/app/week, calculate X.'",
+      recognizeIt: [
+        "'Users with 2+ posts' → GROUP BY + HAVING COUNT >= 2 (Average Post Hiatus)",
+        "'First activity date per user' → GROUP BY + MIN(date) (First Activity)",
+        "'CTR per app' → GROUP BY + conditional counting (Click-Through Rate)",
+        "'Users who called 3+ people' → GROUP BY + COUNT DISTINCT + HAVING (3+ Calls)",
+      ],
+      approach: "1) What to group by? 2) What to count/sum? 3) Filter groups (HAVING) or rows (WHERE)?",
+    },
     patterns: [
       {
         name: "HAVING vs WHERE",
@@ -60,6 +76,16 @@ export const CHEATSHEET_CATEGORIES: SkillCategory[] = [
     icon: "link",
     description: "Anti-joins, self-joins, graph queries",
     matchPatterns: ["Anti-Join", "Self-Join", "Graph Query"],
+    mentalModel: {
+      coreIdea: "Combine tables or compare rows. 'What's missing?' = anti-join. 'Find pairs?' = self-join.",
+      recognizeIt: [
+        "'Pages with no likes' → Anti-join: LEFT JOIN + IS NULL (Pages No Likes)",
+        "'Friend recommendations' → Self-join + anti-join (Page Recommendations)",
+        "'Mutual friends count' → Self-join on shared friend_id (Mutual Friends)",
+        "'Users who share 2+ private events' → Self-join on event_id + HAVING (Friend Recommendations)",
+      ],
+      approach: "1) 'Missing' data? → Anti-join. 2) Comparing within same table? → Self-join. 3) Exclude existing pairs? → NOT EXISTS.",
+    },
     patterns: [
       {
         name: "Anti-Join (Find Missing)",
@@ -92,6 +118,17 @@ export const CHEATSHEET_CATEGORIES: SkillCategory[] = [
     icon: "chart-bar",
     description: "Ranking, running totals, gaps & islands",
     matchPatterns: ["Window", "DENSE_RANK", "Rolling", "Deduplication", "ROW_NUMBER", "Gaps"],
+    mentalModel: {
+      coreIdea: "Calculate across rows without collapsing them. 'Keep all rows but add context.'",
+      recognizeIt: [
+        "'Second highest per category' → DENSE_RANK + filter rank = 2 (Second Highest Engagement)",
+        "'Remove duplicates, keep most recent' → ROW_NUMBER + filter rn = 1 (Deduplicate Records)",
+        "'YTD cumulative revenue' → SUM OVER + UNBOUNDED PRECEDING (Cumulative Revenue)",
+        "'Consecutive login streak' → Gaps & Islands technique (Consecutive Login Streak)",
+        "'Rolling 7-day active users' → Correlated subquery with date BETWEEN (Rolling 7-Day)",
+      ],
+      approach: "1) Need ranking? → ROW_NUMBER/DENSE_RANK. 2) Running total? → SUM OVER. 3) Consecutive sequences? → Gaps & Islands.",
+    },
     patterns: [
       {
         name: "ROW_NUMBER vs RANK vs DENSE_RANK",
@@ -125,6 +162,17 @@ export const CHEATSHEET_CATEGORIES: SkillCategory[] = [
     icon: "trending-up",
     description: "CTR, DAU/MAU, YoY growth, churn",
     matchPatterns: ["Rate", "Ratio", "Percentage", "CTEs", "Period Comparison", "YoY", "MoM", "Stickiness"],
+    mentalModel: {
+      coreIdea: "Metrics = numerator / denominator × 100. Always clarify: What's being counted? What's the base?",
+      recognizeIt: [
+        "'CTR per app' → clicks / impressions × 100 (Click-Through Rate)",
+        "'Video call percentage' → video_callers / active_users × 100 (Video Call Percentage)",
+        "'DAU/MAU stickiness' → avg(daily_count) / monthly_users × 100 (DAU/MAU Stickiness)",
+        "'YoY MAU growth' → (this_year - last_year) / last_year × 100 (YoY MAU Growth)",
+        "'Churn rate by week' → churned / total × 100 (Weekly Churn Rate)",
+      ],
+      approach: "1) Define numerator precisely. 2) Define denominator (the base). 3) Calculate ratio × 100. 4) Handle edge cases (div by zero).",
+    },
     patterns: [
       {
         name: "Percentage Formula",
@@ -159,6 +207,16 @@ export const CHEATSHEET_CATEGORIES: SkillCategory[] = [
     icon: "puzzle",
     description: "State machines, histograms, set operations",
     matchPatterns: ["State Machine", "Histogram", "Set Operations", "Existence"],
+    mentalModel: {
+      coreIdea: "Complex problems = smaller patterns combined. Break into: states, transitions, sets, distributions.",
+      recognizeIt: [
+        "'Advertiser status update' → State machine with CASE WHEN (Advertiser Status)",
+        "'Comment count distribution' → Histogram: aggregate → bucket → count (Comment Histogram)",
+        "'Users active in BOTH months' → Set intersection: IN or EXISTS (MAU Retention)",
+        "'Recommend pages friends liked' → Self-join + anti-join + ranking (Page Recommendations)",
+      ],
+      approach: "1) Identify the pattern type. 2) Use CTEs to break into steps. 3) Handle edge cases explicitly (zero counts, missing data).",
+    },
     patterns: [
       {
         name: "State Machine",

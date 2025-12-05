@@ -168,10 +168,40 @@ export default function InterviewCheatsheet({
           {/* Tab Content */}
           {activeCategory && (
             <div className="p-6" role="tabpanel">
-              {/* Category Description */}
-              <div className="mb-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-1">{activeCategory.title}</h4>
-                <p className="text-sm text-gray-500">{activeCategory.description}</p>
+              {/* Mental Model Section */}
+              <div className="mb-6 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-5 border border-teal-100">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{activeCategory.title}</h4>
+                    <p className="text-sm text-teal-700 font-medium">{activeCategory.mentalModel.coreIdea}</p>
+                  </div>
+                </div>
+
+                {/* Recognize It - Problem patterns from actual challenges */}
+                <div className="mt-4">
+                  <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recognize This Pattern</h5>
+                  <div className="space-y-1.5">
+                    {activeCategory.mentalModel.recognizeIt.map((example, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="text-teal-500 mt-0.5 flex-shrink-0">→</span>
+                        <span>{example}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Approach */}
+                <div className="mt-4 pt-3 border-t border-teal-100">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold text-gray-700">Approach: </span>
+                    {activeCategory.mentalModel.approach}
+                  </p>
+                </div>
               </div>
 
               {/* Patterns Grid */}
