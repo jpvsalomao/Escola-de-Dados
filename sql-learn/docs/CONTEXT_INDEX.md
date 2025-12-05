@@ -1,7 +1,15 @@
 # Context Index
 
-**Last Updated:** 2025-11-15
-**Version:** 2.0.0
+**Last Updated:** 2025-12-05
+**Version:** 2.1.0
+
+## Active Sprint
+
+| Sprint | Title | Status | Plan |
+|--------|-------|--------|------|
+| 8 | Sprint System Setup & UI Polish | Complete | [docs/sprints/sprint-8/plan.md](sprints/sprint-8/plan.md) |
+
+**Quick Context:** See `STATUS.md` at project root for current state.
 
 ## Purpose
 

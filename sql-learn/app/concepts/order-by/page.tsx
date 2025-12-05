@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { InteractiveExample } from "@/app/components/concepts/InteractiveExample";
+import { CopyButton } from "@/app/components/concepts/CopyButton";
+import { orderByExamples } from "@/app/lib/concept-examples";
 
 export default function OrderByPage() {
   const [activeExample, setActiveExample] = useState(0);
+  const [activeVisualExample, setActiveVisualExample] = useState(0);
 
   const examples = [
     {
@@ -89,9 +93,15 @@ export default function OrderByPage() {
           {/* Basic Syntax */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Basic Syntax</h2>
-            <div className="bg-gray-900 rounded-xl p-6 overflow-x-auto">
-              <pre className="text-gray-100 font-mono text-sm">
-                <code>{`SELECT column1, column2, ...
+            <div className="bg-gray-900 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                <span className="text-xs text-gray-400 font-mono">SQL Syntax</span>
+                <CopyButton text={`SELECT column1, column2, ...
+FROM table_name
+ORDER BY column_name [ASC|DESC];`} />
+              </div>
+              <pre className="p-6 overflow-x-auto">
+                <code className="text-gray-100 font-mono text-sm">{`SELECT column1, column2, ...
 FROM table_name
 ORDER BY column_name [ASC|DESC];`}</code>
               </pre>
@@ -115,9 +125,9 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   <button
                     key={idx}
                     onClick={() => setActiveExample(idx)}
-                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-all ${
                       activeExample === idx
-                        ? "bg-white text-teal-600 border-b-2 border-teal-600"
+                        ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
@@ -130,9 +140,13 @@ ORDER BY column_name [ASC|DESC];`}</code>
                 <p className="text-gray-700 mb-4">{examples[activeExample].description}</p>
 
                 {/* SQL Code */}
-                <div className="bg-gray-900 rounded-xl p-4 mb-4">
-                  <pre className="text-gray-100 font-mono text-sm">
-                    <code>{examples[activeExample].sql}</code>
+                <div className="bg-gray-900 rounded-xl overflow-hidden mb-4">
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                    <span className="text-xs text-gray-400 font-mono">SQL Query</span>
+                    <CopyButton text={examples[activeExample].sql} />
+                  </div>
+                  <pre className="p-4 overflow-x-auto">
+                    <code className="text-gray-100 font-mono text-sm">{examples[activeExample].sql}</code>
                   </pre>
                 </div>
 
@@ -151,6 +165,36 @@ ORDER BY column_name [ASC|DESC];`}</code>
             </div>
           </section>
 
+          {/* Visual Sorting Examples */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">See Sorting In Action</h2>
+            <p className="text-gray-600 mb-6">
+              Watch how ORDER BY transforms data! See the before and after states to understand how sorting works.
+            </p>
+
+            {/* Example Selector Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {orderByExamples.map((example, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveVisualExample(idx)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    activeVisualExample === idx
+                      ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg"
+                      : "bg-white text-gray-700 border-2 border-gray-300 hover:border-teal-400"
+                  }`}
+                >
+                  {example.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Visual Example */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8">
+              <InteractiveExample example={orderByExamples[activeVisualExample]} />
+            </div>
+          </section>
+
           {/* Key Concepts */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Concepts</h2>
@@ -162,10 +206,12 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Ascending Order</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   Sorts from smallest to largest (A→Z, 0→9, oldest→newest).
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block">ORDER BY price ASC</code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">ORDER BY price ASC</code>
+                </div>
                 <p className="text-gray-600 text-xs mt-2">This is the default - you can omit ASC</p>
               </div>
 
@@ -176,10 +222,12 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Descending Order</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   Sorts from largest to smallest (Z→A, 9→0, newest→oldest).
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block">ORDER BY price DESC</code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">ORDER BY price DESC</code>
+                </div>
                 <p className="text-gray-600 text-xs mt-2">Must explicitly specify DESC</p>
               </div>
 
@@ -190,10 +238,12 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Multiple Columns</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   Sort by first column, then use second column to break ties.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block">ORDER BY country, age DESC</code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">ORDER BY country, age DESC</code>
+                </div>
                 <p className="text-gray-600 text-xs mt-2">Can mix ASC and DESC</p>
               </div>
 
@@ -204,10 +254,12 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">NULL Handling</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   NULL values typically appear last in ASC, first in DESC.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block">ORDER BY last_login DESC</code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">ORDER BY last_login DESC</code>
+                </div>
                 <p className="text-gray-600 text-xs mt-2">Behavior varies by database</p>
               </div>
             </div>
@@ -224,12 +276,14 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Numbers</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   Sorted numerically: 1, 2, 10, 20, 100 (not alphabetically)
                 </p>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block">
-                  SELECT * FROM products ORDER BY price DESC;
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    SELECT * FROM products ORDER BY price DESC;
+                  </code>
+                </div>
               </div>
 
               <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
@@ -239,12 +293,14 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Text (Strings)</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   Sorted alphabetically. Case-sensitivity depends on database settings.
                 </p>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block">
-                  SELECT * FROM customers ORDER BY name ASC;
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    SELECT * FROM customers ORDER BY name ASC;
+                  </code>
+                </div>
               </div>
 
               <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
@@ -254,12 +310,14 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Dates & Times</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   Sorted chronologically. Older dates come first in ASC.
                 </p>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block">
-                  SELECT * FROM orders ORDER BY order_date DESC; -- Most recent first
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    SELECT * FROM orders ORDER BY order_date DESC; -- Most recent first
+                  </code>
+                </div>
               </div>
 
               <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
@@ -269,12 +327,14 @@ ORDER BY column_name [ASC|DESC];`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Booleans</h3>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">
+                <p className="text-gray-700 text-sm mb-2 break-words">
                   False (0) before True (1) in ASC order.
                 </p>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block">
-                  SELECT * FROM tasks ORDER BY completed ASC; -- Incomplete tasks first
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    SELECT * FROM tasks ORDER BY completed ASC; -- Incomplete tasks first
+                  </code>
+                </div>
               </div>
             </div>
           </section>

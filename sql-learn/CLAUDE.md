@@ -32,6 +32,10 @@ npm test             # Run unit tests (Vitest)
 npm run test:e2e     # Run E2E tests (Playwright)
 npm run test:e2e -- --headed  # Run E2E tests with browser UI
 npm run test:e2e -- --debug   # Run E2E tests in debug mode
+
+# Utility Scripts
+python3 scripts/generate-sample-data.py              # Generate sample datasets
+node scripts/test-challenges.js pack_basics          # Test a pack's challenges
 ```
 
 **Note:** This project uses npm as the package manager.
@@ -174,26 +178,24 @@ These headers are ESSENTIAL for DuckDB-WASM to function. Do not remove them.
 
 ## Component Organization
 
-### Reusable Components (`app/components/`)
+### Key Components (`app/components/`)
 
-- `Editor.tsx` - Monaco-based SQL editor (lazy loaded)
-- `ResultGrid.tsx` - Displays query results in table format
-- `ChallengeCard.tsx` - Challenge preview card
-- `PackCard.tsx` - Pack preview card with progress
-- `ProgressBadge.tsx` - Circular progress indicator
-- `Breadcrumb.tsx` - Navigation breadcrumbs
-- `KeyboardShortcuts.tsx` - Collapsible keyboard shortcuts panel
-- `PackCardSkeleton.tsx` - Loading skeleton for pack cards
-- `ChallengeCardSkeleton.tsx` - Loading skeleton for challenge cards
-- `AnimatedNumber.tsx` - Animated number transitions
-- `Confetti.tsx` - Celebration animation
-- `Icon.tsx` - Icon component wrapper
+- `Editor.tsx` - Monaco-based SQL editor (lazy loaded to reduce bundle size)
+- `ResultGrid.tsx` - Query results table
+- `ChallengeCard.tsx` / `PackCard.tsx` - Card components with skeletons
 
 ### Page Structure
 
 - `app/page.tsx` - Homepage with pack browser
 - `app/packs/[packId]/page.tsx` - Pack detail with challenge list
 - `app/challenges/[packId]/[challengeId]/page.tsx` - Challenge workspace
+- `app/concepts/` - SQL learning materials (select-basics, where-clause, order-by, group-by, joins-intro)
+
+### Internationalization
+
+Locale files are at `app/locales/` with support for:
+- `en.json` - English
+- `pt-BR.json` - Brazilian Portuguese
 
 ## Important Patterns
 
@@ -317,6 +319,23 @@ Core types in `app/lib/types.ts`:
 - DuckDB-WASM: ~2-3 MB
 - Monaco Editor: ~1 MB (lazy loaded)
 - App Code: ~500 KB
+
+## Sprint System
+
+**Quick Start:**
+1. Read `STATUS.md` for current project state
+2. Check `docs/sprints/sprint-N/plan.md` for active sprint details
+3. Follow `docs/PLAYBOOKS/iteration-playbook.md` for workflow
+
+**Key Files:**
+- `STATUS.md` - Read this first! Project-level status
+- `docs/sprints/README.md` - Sprint conventions
+- `docs/sprints/sprint-N/` - Individual sprint documentation
+
+**When Resuming Work:**
+1. Check `STATUS.md` for current sprint number
+2. Read active sprint's `plan.md`
+3. Update `STATUS.md` timestamp when starting
 
 ## Styling
 

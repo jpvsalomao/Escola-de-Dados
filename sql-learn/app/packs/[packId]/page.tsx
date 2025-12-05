@@ -558,112 +558,115 @@ export default function PackPage() {
           <SkillsChecklist
             challenges={pack.challenges}
             completedChallengeIds={completedChallenges}
+            packId={pack.id}
           />
         )}
 
-        {/* Challenges by Section */}
-        <div className="space-y-8">
-          {challengesBySection.map((section) => {
-            if (section.challenges.length === 0) return null;
+        {/* Challenges by Section - Only for packs WITHOUT skills-based organization */}
+        {!pack.challenges.some(c => c.conceptExplanation) && (
+          <div className="space-y-8">
+            {challengesBySection.map((section) => {
+              if (section.challenges.length === 0) return null;
 
-            const sectionProgress = getSectionProgress(section.challenges);
+              const sectionProgress = getSectionProgress(section.challenges);
 
-            return (
-              <div key={section.id} className="space-y-4">
-                {/* Section Header - Clickable */}
-                <button
-                  onClick={() => toggleSection(section.id)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-                  aria-expanded={!collapsedSections.has(section.id)}
-                  aria-controls={`section-${section.id}-content`}
-                  aria-label={`${collapsedSections.has(section.id) ? 'Expand' : 'Collapse'} ${section.title} section`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Chevron Icon */}
-                    <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${collapsedSections.has(section.id) ? '' : 'rotate-90'}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${getSectionColorClasses(section.color)}`}
-                      aria-hidden="true"
-                    >
-                      <Icon name={section.icon} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors">{section.title}</h3>
-                      <p className="text-sm text-gray-600">{section.description}</p>
-                    </div>
-                  </div>
-
-                  {/* Section Progress */}
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {sectionProgress.completed}/{sectionProgress.total} completed
-                      </p>
-                      <p className="text-xs text-gray-500">{sectionProgress.percentage}%</p>
-                    </div>
-                    <div className="relative w-16 h-16">
-                      <svg className="transform -rotate-90 w-16 h-16" viewBox="0 0 36 36">
-                        {/* Background circle */}
-                        <circle
-                          cx="18"
-                          cy="18"
-                          r="15.5"
-                          fill="none"
-                          stroke="#e5e7eb"
-                          strokeWidth="3"
-                        />
-                        {/* Progress circle */}
-                        <circle
-                          cx="18"
-                          cy="18"
-                          r="15.5"
-                          fill="none"
-                          stroke={sectionProgress.percentage === 100 ? '#10b981' : '#0D9488'}
-                          strokeWidth="3"
-                          strokeDasharray={`${(sectionProgress.percentage / 100) * 97.4}, 97.4`}
-                          strokeLinecap="round"
-                        />
+              return (
+                <div key={section.id} className="space-y-4">
+                  {/* Section Header - Clickable */}
+                  <button
+                    onClick={() => toggleSection(section.id)}
+                    className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors group focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                    aria-expanded={!collapsedSections.has(section.id)}
+                    aria-controls={`section-${section.id}-content`}
+                    aria-label={`${collapsedSections.has(section.id) ? 'Expand' : 'Collapse'} ${section.title} section`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Chevron Icon */}
+                      <svg
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${collapsedSections.has(section.id) ? '' : 'rotate-90'}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      {/* Percentage text in center */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs font-bold text-gray-700">{sectionProgress.percentage}%</span>
+
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${getSectionColorClasses(section.color)}`}
+                        aria-hidden="true"
+                      >
+                        <Icon name={section.icon} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors">{section.title}</h3>
+                        <p className="text-sm text-gray-600">{section.description}</p>
                       </div>
                     </div>
-                  </div>
-                </button>
 
-                {/* Challenges Grid - Collapsible */}
-                {!collapsedSections.has(section.id) && (
-                  <div 
-                    id={`section-${section.id}-content`}
-                    className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300"
-                    role="list"
-                    aria-label={`${section.title} challenges`}
-                  >
-                    {section.challenges.map((challenge) => (
-                      <ChallengeCard
-                        key={challenge.id}
-                        challenge={challenge}
-                        packId={pack.id}
-                        completed={completedChallenges.has(challenge.id)}
-                        index={pack.challenges.findIndex(c => c.id === challenge.id) + 1}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    {/* Section Progress */}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {sectionProgress.completed}/{sectionProgress.total} completed
+                        </p>
+                        <p className="text-xs text-gray-500">{sectionProgress.percentage}%</p>
+                      </div>
+                      <div className="relative w-16 h-16">
+                        <svg className="transform -rotate-90 w-16 h-16" viewBox="0 0 36 36">
+                          {/* Background circle */}
+                          <circle
+                            cx="18"
+                            cy="18"
+                            r="15.5"
+                            fill="none"
+                            stroke="#e5e7eb"
+                            strokeWidth="3"
+                          />
+                          {/* Progress circle */}
+                          <circle
+                            cx="18"
+                            cy="18"
+                            r="15.5"
+                            fill="none"
+                            stroke={sectionProgress.percentage === 100 ? '#10b981' : '#0D9488'}
+                            strokeWidth="3"
+                            strokeDasharray={`${(sectionProgress.percentage / 100) * 97.4}, 97.4`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        {/* Percentage text in center */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-bold text-gray-700">{sectionProgress.percentage}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Challenges Grid - Collapsible */}
+                  {!collapsedSections.has(section.id) && (
+                    <div
+                      id={`section-${section.id}-content`}
+                      className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-300"
+                      role="list"
+                      aria-label={`${section.title} challenges`}
+                    >
+                      {section.challenges.map((challenge) => (
+                        <ChallengeCard
+                          key={challenge.id}
+                          challenge={challenge}
+                          packId={pack.id}
+                          completed={completedChallenges.has(challenge.id)}
+                          index={pack.challenges.findIndex(c => c.id === challenge.id) + 1}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       <footer className="mt-20 border-t border-gray-200 bg-white" role="contentinfo">

@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { InteractiveExample } from "@/app/components/concepts/InteractiveExample";
+import { CopyButton } from "@/app/components/concepts/CopyButton";
+import { whereExamples } from "@/app/lib/concept-examples";
 
 export default function WhereClausePage() {
   const [activeExample, setActiveExample] = useState(0);
+  const [activeVisualExample, setActiveVisualExample] = useState(0);
 
   const examples = [
     {
@@ -89,9 +93,15 @@ export default function WhereClausePage() {
           {/* Basic Syntax */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Basic Syntax</h2>
-            <div className="bg-gray-900 rounded-xl p-6 overflow-x-auto">
-              <pre className="text-gray-100 font-mono text-sm">
-                <code>{`SELECT column1, column2, ...
+            <div className="bg-gray-900 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                <span className="text-xs text-gray-400 font-mono">SQL Syntax</span>
+                <CopyButton text={`SELECT column1, column2, ...
+FROM table_name
+WHERE condition;`} />
+              </div>
+              <pre className="p-6 overflow-x-auto">
+                <code className="text-gray-100 font-mono text-sm whitespace-pre break-words">{`SELECT column1, column2, ...
 FROM table_name
 WHERE condition;`}</code>
               </pre>
@@ -115,9 +125,9 @@ WHERE condition;`}</code>
                   <button
                     key={idx}
                     onClick={() => setActiveExample(idx)}
-                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-all ${
                       activeExample === idx
-                        ? "bg-white text-teal-600 border-b-2 border-teal-600"
+                        ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
@@ -130,9 +140,13 @@ WHERE condition;`}</code>
                 <p className="text-gray-700 mb-4">{examples[activeExample].description}</p>
 
                 {/* SQL Code */}
-                <div className="bg-gray-900 rounded-xl p-4 mb-4">
-                  <pre className="text-gray-100 font-mono text-sm">
-                    <code>{examples[activeExample].sql}</code>
+                <div className="bg-gray-900 rounded-xl overflow-hidden mb-4">
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                    <span className="text-xs text-gray-400 font-mono">SQL Query</span>
+                    <CopyButton text={examples[activeExample].sql} />
+                  </div>
+                  <pre className="p-4 overflow-x-auto">
+                    <code className="text-gray-100 font-mono text-sm">{examples[activeExample].sql}</code>
                   </pre>
                 </div>
 
@@ -151,6 +165,36 @@ WHERE condition;`}</code>
             </div>
           </section>
 
+          {/* Visual Interactive Examples */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">See It In Action</h2>
+            <p className="text-gray-600 mb-6">
+              Watch how WHERE filters data step by step. Select an example to see the complete flow from input data to filtered results.
+            </p>
+
+            {/* Example Selector Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {whereExamples.map((example, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveVisualExample(idx)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    activeVisualExample === idx
+                      ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg"
+                      : "bg-white text-gray-700 border-2 border-gray-300 hover:border-teal-400"
+                  }`}
+                >
+                  {example.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Visual Example */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8">
+              <InteractiveExample example={whereExamples[activeVisualExample]} />
+            </div>
+          </section>
+
           {/* Comparison Operators */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Comparison Operators</h2>
@@ -160,9 +204,11 @@ WHERE condition;`}</code>
                   <span className="text-2xl">=</span>
                   Equal To
                 </h3>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">age = 25</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">age = 25</code>
+                </div>
                 <p className="text-gray-700 text-sm">
-                  Exact match. Use single quotes for text: <code className="text-xs bg-gray-100 px-1 rounded">country = 'USA'</code>
+                  Exact match. Use single quotes for text: <code className="text-xs bg-gray-100 px-1 rounded break-all">country = 'USA'</code>
                 </p>
               </div>
 
@@ -171,7 +217,9 @@ WHERE condition;`}</code>
                   <span className="text-2xl">!=</span>
                   Not Equal To
                 </h3>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">status != 'inactive'</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">status != 'inactive'</code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Excludes rows with the specified value. Can also use <code className="text-xs bg-gray-100 px-1 rounded">&lt;&gt;</code>
                 </p>
@@ -182,7 +230,9 @@ WHERE condition;`}</code>
                   <span className="text-2xl">&gt; &lt;</span>
                   Greater/Less Than
                 </h3>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">price &gt; 100</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">price &gt; 100</code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Compare numeric values. Also includes <code className="text-xs bg-gray-100 px-1 rounded">&gt;=</code> and <code className="text-xs bg-gray-100 px-1 rounded">&lt;=</code>
                 </p>
@@ -193,8 +243,10 @@ WHERE condition;`}</code>
                   <span className="text-2xl">BETWEEN</span>
                   Range
                 </h3>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">age BETWEEN 18 AND 65</code>
-                <p className="text-gray-700 text-sm">
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">age BETWEEN 18 AND 65</code>
+                </div>
+                <p className="text-gray-700 text-sm break-words">
                   Inclusive range check. Easier to read than <code className="text-xs bg-gray-100 px-1 rounded">age &gt;= 18 AND age &lt;= 65</code>
                 </p>
               </div>
@@ -204,7 +256,9 @@ WHERE condition;`}</code>
                   <span className="text-2xl">IN</span>
                   List Match
                 </h3>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">country IN ('USA', 'Canada')</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">country IN ('USA', 'Canada')</code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Matches any value in the list. Cleaner than multiple OR conditions.
                 </p>
@@ -215,7 +269,9 @@ WHERE condition;`}</code>
                   <span className="text-2xl">LIKE</span>
                   Pattern Match
                 </h3>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">name LIKE 'John%'</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">name LIKE 'John%'</code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Use <code className="text-xs bg-gray-100 px-1 rounded">%</code> for any characters, <code className="text-xs bg-gray-100 px-1 rounded">_</code> for single character.
                 </p>
@@ -234,9 +290,11 @@ WHERE condition;`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">AND - Both Must Be True</h3>
                 </div>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">
-                  WHERE age &gt;= 18 AND country = 'USA'
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    WHERE age &gt;= 18 AND country = 'USA'
+                  </code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Narrows results. Only rows where ALL conditions are true are returned.
                 </p>
@@ -249,9 +307,11 @@ WHERE condition;`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">OR - At Least One Must Be True</h3>
                 </div>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">
-                  WHERE country = 'USA' OR country = 'Canada'
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    WHERE country = 'USA' OR country = 'Canada'
+                  </code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Broadens results. Rows matching ANY condition are returned.
                 </p>
@@ -264,9 +324,11 @@ WHERE condition;`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">NOT - Negates a Condition</h3>
                 </div>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">
-                  WHERE NOT country = 'USA'
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    WHERE NOT country = 'USA'
+                  </code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Reverses the condition. Can also use <code className="text-xs bg-gray-100 px-1 rounded">!=</code> or <code className="text-xs bg-gray-100 px-1 rounded">NOT IN</code>
                 </p>
@@ -279,9 +341,11 @@ WHERE condition;`}</code>
                   </div>
                   <h3 className="font-bold text-gray-900">Parentheses - Control Order</h3>
                 </div>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded block mb-2">
-                  WHERE (country = 'USA' OR country = 'Canada') AND age &gt;= 18
-                </code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-sm whitespace-nowrap">
+                    WHERE (country = 'USA' OR country = 'Canada') AND age &gt;= 18
+                  </code>
+                </div>
                 <p className="text-gray-700 text-sm">
                   Group conditions to control evaluation order. Critical for complex filters!
                 </p>

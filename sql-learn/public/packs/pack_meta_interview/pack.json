@@ -3,14 +3,14 @@
   "min_app_version": "1.0.0",
   "id": "pack_meta_interview",
   "title": "Meta Data Scientist SQL Interview Prep",
-  "description": "10 verified SQL questions from Meta Data Scientist interviews (2024-2025). Practice the exact patterns Meta tests: user retention, CTR calculation, friend recommendations, and window functions. Each question includes interview tips aligned with Meta's official assessment criteria.",
+  "description": "20 verified SQL questions from Meta Data Scientist (Product Analytics) interviews (2024-2025). Practice the exact patterns Meta tests: user retention, CTR calculation, friend recommendations, window functions, gaps-and-islands, state machines, and more. Each question includes interview tips aligned with Meta's official assessment criteria.",
   "metadata": {
     "author": "Escola de Dados",
     "authorBio": "Curated from verified Meta interview questions with realistic Facebook-style datasets.",
     "locale": "en",
     "tags": ["interview", "meta", "facebook", "data-scientist", "advanced"],
     "difficulty": "advanced",
-    "estimatedTimeMinutes": 180,
+    "estimatedTimeMinutes": 360,
     "prerequisites": [
       "GROUP BY and HAVING clauses",
       "JOINs (INNER, LEFT, SELF)",
@@ -38,7 +38,13 @@
     { "name": "calls", "src": "calls.parquet" },
     { "name": "comments", "src": "comments.parquet" },
     { "name": "signups", "src": "signups.parquet" },
-    { "name": "messenger_activity", "src": "messenger_activity.parquet" }
+    { "name": "messenger_activity", "src": "messenger_activity.parquet" },
+    { "name": "logins", "src": "logins.parquet" },
+    { "name": "advertisers", "src": "advertisers.parquet" },
+    { "name": "daily_pay", "src": "daily_pay.parquet" },
+    { "name": "transactions", "src": "transactions.parquet" },
+    { "name": "user_records", "src": "user_records.parquet" },
+    { "name": "monthly_active", "src": "monthly_active.parquet" }
   ],
   "sections": {
     "engagement": {
@@ -609,6 +615,561 @@
         "explanation": "Rolling metrics count distinct items across a sliding window. Standard window functions can't do DISTINCT across frames, so use a correlated subquery or date range filter.",
         "keyInsight": "Rolling distinct = for each date, query the window with BETWEEN.",
         "relatedSkills": ["Window Functions", "CTEs for Query Organization"]
+      }
+    },
+    {
+      "id": "q11_consecutive_login_streak",
+      "title": "Consecutive Login Streak",
+      "prompt": "Find users who have logged in for at least 5 consecutive days. For each such user, return their longest streak of consecutive login days.\n\nA 'consecutive streak' means the user logged in on day 1, day 2, day 3, etc. with no gaps. If a user logged in multiple times on the same day, count that day once.\n\nReturn: user_id, longest_streak\n\nOrder by longest_streak DESC, user_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "This is a 'gaps and islands' problem. The key insight is that for consecutive dates, if you subtract a row number from the date, you get the same value (an 'island key').",
+        "tier2": "Use ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) to number each user's logins. Subtract this from the date to create groups of consecutive days. Then count days per group.",
+        "tier3": "WITH unique_logins AS (SELECT DISTINCT user_id, CAST(login_date AS DATE) AS login_date FROM logins), ranked AS (SELECT user_id, login_date, login_date - INTERVAL (ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date)) DAY AS island_key FROM unique_logins), streaks AS (SELECT user_id, island_key, COUNT(*) AS streak_length FROM ranked GROUP BY user_id, island_key) SELECT user_id, MAX(streak_length) AS longest_streak FROM streaks GROUP BY user_id HAVING MAX(streak_length) >= 5 ORDER BY longest_streak DESC, user_id ASC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'This is a gaps-and-islands problem. The trick is that for consecutive dates, date minus row_number gives the same value. I'll use ROW_NUMBER partitioned by user, then group by this island key.'",
+        "detailsToCheck": "Clarify: Are there duplicate logins on the same day (need DISTINCT)? What date format is login_date? Is today's date included in 'consecutive'?",
+        "metaProductContext": "Login streaks power Facebook's engagement features like streak badges and 'You've been active for X days!' notifications. Snapchat popularized this pattern.",
+        "avoidGeneric": "Don't just give the solution. Explain WHY date - ROW_NUMBER works: consecutive dates increase by 1, row numbers increase by 1, so the difference stays constant.",
+        "followUpQuestion": "Interviewer may ask: 'How would you design an A/B test to see if showing streak badges increases daily logins?'"
+      },
+      "solution_sql": "WITH unique_logins AS (SELECT DISTINCT user_id, CAST(login_date AS DATE) AS login_date FROM logins), ranked AS (SELECT user_id, login_date, login_date - INTERVAL (ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date)) DAY AS island_key FROM unique_logins), streaks AS (SELECT user_id, island_key, COUNT(*) AS streak_length FROM ranked GROUP BY user_id, island_key) SELECT user_id, MAX(streak_length) AS longest_streak FROM streaks GROUP BY user_id HAVING MAX(streak_length) >= 5 ORDER BY longest_streak DESC, user_id ASC",
+      "tests": [
+        {
+          "name": "returns_8_users",
+          "assert": "ROWCOUNT",
+          "expected": 8
+        },
+        {
+          "name": "all_streaks_at_least_5",
+          "assert": "SQL",
+          "sql": "SELECT MIN(longest_streak) >= 5 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'longest_streak')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 3000, "row_limit": 1000 },
+      "tags": ["window functions", "gaps and islands", "consecutive", "ROW_NUMBER"],
+      "difficulty": "hard",
+      "section": "engagement",
+      "tables": ["logins"],
+      "estimatedMinutes": 15,
+      "beforeYouCode": [
+        "How do you detect 'consecutive' dates in SQL?",
+        "What's the gaps-and-islands technique?",
+        "Should we count each day once even if user logged in multiple times?"
+      ],
+      "conceptExplanation": {
+        "skill": "Gaps & Islands",
+        "explanation": "The 'gaps and islands' technique uses ROW_NUMBER to detect consecutive sequences. By subtracting ROW_NUMBER from the date, consecutive dates produce the same 'island key'. Group by this key to find streak lengths.",
+        "keyInsight": "date - ROW_NUMBER = constant for consecutive dates (the island key).",
+        "relatedSkills": ["Window Functions", "Date Range Calculations"]
+      }
+    },
+    {
+      "id": "q12_advertiser_status",
+      "title": "Advertiser Status Transitions",
+      "prompt": "Update the payment status of Facebook advertisers based on their payment history. The status transitions are:\n\n- NEW → EXISTING: if they paid today\n- NEW → CHURN: if they didn't pay today\n- EXISTING → EXISTING: if they paid today\n- EXISTING → CHURN: if they didn't pay today\n- CHURN → RESURRECT: if they paid today\n- CHURN → CHURN: if they didn't pay today\n- RESURRECT → EXISTING: if they paid today\n- RESURRECT → CHURN: if they didn't pay today\n\n'Today' is 2024-12-01. The daily_pay table shows who paid today.\n\nReturn: user_id, new_status\n\nOrder by user_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "This is a state machine problem. Use a LEFT JOIN to check if each advertiser paid today, then use CASE WHEN to implement all the state transitions.",
+        "tier2": "LEFT JOIN advertisers with daily_pay on user_id WHERE paid_date = '2024-12-01'. If daily_pay.user_id IS NULL, they didn't pay. Then write CASE logic for each current status.",
+        "tier3": "SELECT a.user_id, CASE WHEN a.status = 'NEW' AND dp.user_id IS NOT NULL THEN 'EXISTING' WHEN a.status = 'NEW' AND dp.user_id IS NULL THEN 'CHURN' WHEN a.status = 'EXISTING' AND dp.user_id IS NOT NULL THEN 'EXISTING' WHEN a.status = 'EXISTING' AND dp.user_id IS NULL THEN 'CHURN' WHEN a.status = 'CHURN' AND dp.user_id IS NOT NULL THEN 'RESURRECT' WHEN a.status = 'CHURN' AND dp.user_id IS NULL THEN 'CHURN' WHEN a.status = 'RESURRECT' AND dp.user_id IS NOT NULL THEN 'EXISTING' WHEN a.status = 'RESURRECT' AND dp.user_id IS NULL THEN 'CHURN' END AS new_status FROM advertisers a LEFT JOIN daily_pay dp ON a.user_id = dp.user_id AND dp.paid_date = '2024-12-01' ORDER BY a.user_id"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'This is a state machine with 4 states and 2 events (paid/not paid). Let me map out all 8 transitions first, then implement with CASE WHEN.'",
+        "detailsToCheck": "Clarify: What's 'today's date? Can an advertiser appear multiple times in daily_pay? What if a user_id is in daily_pay but not in advertisers?",
+        "metaProductContext": "Advertiser lifecycle tracking is critical for Meta's ad revenue. Understanding who's churning vs resurrecting drives the ads sales team's outreach priorities.",
+        "avoidGeneric": "Draw out the state machine before coding. Mention that RESURRECT status is valuable - these are win-back opportunities with existing ad accounts.",
+        "followUpQuestion": "Interviewer may ask: 'How would you measure the effectiveness of a win-back campaign targeting CHURN advertisers?'"
+      },
+      "solution_sql": "SELECT a.user_id, CASE WHEN a.status = 'NEW' AND dp.user_id IS NOT NULL THEN 'EXISTING' WHEN a.status = 'NEW' AND dp.user_id IS NULL THEN 'CHURN' WHEN a.status = 'EXISTING' AND dp.user_id IS NOT NULL THEN 'EXISTING' WHEN a.status = 'EXISTING' AND dp.user_id IS NULL THEN 'CHURN' WHEN a.status = 'CHURN' AND dp.user_id IS NOT NULL THEN 'RESURRECT' WHEN a.status = 'CHURN' AND dp.user_id IS NULL THEN 'CHURN' WHEN a.status = 'RESURRECT' AND dp.user_id IS NOT NULL THEN 'EXISTING' WHEN a.status = 'RESURRECT' AND dp.user_id IS NULL THEN 'CHURN' END AS new_status FROM advertisers a LEFT JOIN daily_pay dp ON a.user_id = dp.user_id AND dp.paid_date = '2024-12-01' ORDER BY a.user_id",
+      "tests": [
+        {
+          "name": "returns_20_advertisers",
+          "assert": "ROWCOUNT",
+          "expected": 20
+        },
+        {
+          "name": "valid_status_values",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE new_status NOT IN ('NEW', 'EXISTING', 'CHURN', 'RESURRECT')",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'new_status')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["state machine", "CASE WHEN", "LEFT JOIN", "business logic"],
+      "difficulty": "hard",
+      "section": "metrics",
+      "tables": ["advertisers", "daily_pay"],
+      "estimatedMinutes": 15,
+      "beforeYouCode": [
+        "What are all the possible state transitions?",
+        "How do we know if someone paid today?",
+        "What happens to NEW advertisers who don't pay?"
+      ],
+      "conceptExplanation": {
+        "skill": "State Machine Logic",
+        "explanation": "State machine problems require mapping all possible (current_state, event) → new_state transitions. Use CASE WHEN with multiple conditions to implement the transition logic. LEFT JOIN to detect missing events.",
+        "keyInsight": "Map every (state, event) pair to its next state - that's your CASE WHEN.",
+        "relatedSkills": ["Conditional Counting", "Anti-Join Pattern"]
+      }
+    },
+    {
+      "id": "q13_page_recommendations",
+      "title": "Page Recommendations from Friends",
+      "prompt": "Recommend pages to users based on what their friends liked. For each user, find pages that:\n\n1. At least one of their friends liked\n2. The user has NOT liked themselves\n\nRank recommendations by the number of friends who liked each page.\n\nReturn: user_id, page_id, friends_who_liked (count)\n\nOrder by user_id ASC, friends_who_liked DESC, page_id ASC.\n\nLimit to top 3 recommendations per user.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "First find each user's friends from the friendships table (remember friendships can be stored as (A,B) or (B,A)). Then join to page_likes to find what friends liked. Exclude pages the user already liked.",
+        "tier2": "Use a CTE to normalize friendships (get all friend pairs). Join with page_likes to get friends' likes. Use NOT EXISTS to exclude user's own likes. Use ROW_NUMBER to limit to top 3 per user.",
+        "tier3": "WITH all_friends AS (SELECT user1_id AS user_id, user2_id AS friend_id FROM friendships UNION SELECT user2_id AS user_id, user1_id AS friend_id FROM friendships), friend_likes AS (SELECT af.user_id, pl.page_id, COUNT(*) AS friends_who_liked FROM all_friends af JOIN page_likes pl ON af.friend_id = pl.user_id GROUP BY af.user_id, pl.page_id), ranked AS (SELECT fl.user_id, fl.page_id, fl.friends_who_liked, ROW_NUMBER() OVER (PARTITION BY fl.user_id ORDER BY fl.friends_who_liked DESC, fl.page_id ASC) AS rn FROM friend_likes fl WHERE NOT EXISTS (SELECT 1 FROM page_likes pl2 WHERE pl2.user_id = fl.user_id AND pl2.page_id = fl.page_id)) SELECT user_id, page_id, friends_who_liked FROM ranked WHERE rn <= 3 ORDER BY user_id ASC, friends_who_liked DESC, page_id ASC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need to find friends, get their page likes, exclude pages I already like, then rank by popularity. I'll use CTEs to organize: one for friendships, one for friend likes, one for ranking.'",
+        "detailsToCheck": "How is friendship stored - bidirectional or one-way? Do I need to UNION to get both directions? What if a user has no friends or friends have no likes?",
+        "metaProductContext": "This is exactly how Facebook's 'Suggested Pages' feature works. Friend-based recommendations have higher conversion than algorithmic suggestions.",
+        "avoidGeneric": "Discuss the cold-start problem: new users have no friends. Also mention that you'd want to diversify recommendations, not just show the most popular pages.",
+        "followUpQuestion": "Interviewer may ask: 'How would you evaluate the quality of these recommendations?' (CTR, follow-through rate, long-term engagement)"
+      },
+      "solution_sql": "WITH all_friends AS (SELECT user1_id AS user_id, user2_id AS friend_id FROM friendships UNION SELECT user2_id AS user_id, user1_id AS friend_id FROM friendships), friend_likes AS (SELECT af.user_id, pl.page_id, COUNT(*) AS friends_who_liked FROM all_friends af JOIN page_likes pl ON af.friend_id = pl.user_id GROUP BY af.user_id, pl.page_id), ranked AS (SELECT fl.user_id, fl.page_id, fl.friends_who_liked, ROW_NUMBER() OVER (PARTITION BY fl.user_id ORDER BY fl.friends_who_liked DESC, fl.page_id ASC) AS rn FROM friend_likes fl WHERE NOT EXISTS (SELECT 1 FROM page_likes pl2 WHERE pl2.user_id = fl.user_id AND pl2.page_id = fl.page_id)) SELECT user_id, page_id, friends_who_liked FROM ranked WHERE rn <= 3 ORDER BY user_id ASC, friends_who_liked DESC, page_id ASC",
+      "tests": [
+        {
+          "name": "max_3_per_user",
+          "assert": "SQL",
+          "sql": "SELECT MAX(cnt) <= 3 AS ok FROM (SELECT user_id, COUNT(*) AS cnt FROM ({{USER_SQL}}) GROUP BY user_id)",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "no_already_liked_pages",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r JOIN page_likes pl ON r.user_id = pl.user_id AND r.page_id = pl.page_id",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'page_id', 'friends_who_liked')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 3000, "row_limit": 1000 },
+      "tags": ["self-join", "anti-join", "recommendation", "window functions"],
+      "difficulty": "medium",
+      "section": "advanced",
+      "tables": ["friendships", "page_likes"],
+      "estimatedMinutes": 12,
+      "beforeYouCode": [
+        "How do we find a user's friends from the friendships table?",
+        "How do we exclude pages the user already liked?",
+        "How do we limit to top 3 per user?"
+      ],
+      "conceptExplanation": {
+        "skill": "Self-Join + Anti-Join",
+        "explanation": "Friend-based recommendations require: (1) self-join friendships to find friends, (2) join to page_likes to get friends' likes, (3) anti-join to exclude user's own likes, (4) aggregate and rank.",
+        "keyInsight": "Join friendships → friends' likes → exclude own likes → rank by popularity.",
+        "relatedSkills": ["Window Functions", "Multi-Table Joins"]
+      }
+    },
+    {
+      "id": "q14_second_highest_engagement",
+      "title": "Second Highest Engagement per Category",
+      "prompt": "For each post category, find the post with the second highest engagement score. If a category has fewer than 2 posts, exclude it from results.\n\nIf there are ties for the highest engagement, the second highest should be the next distinct value (use DENSE_RANK).\n\nReturn: category, post_id, engagement_score\n\nOrder by category ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use a window function to rank posts within each category by engagement_score. DENSE_RANK handles ties correctly - if two posts tie for 1st, the next post is 2nd.",
+        "tier2": "Use DENSE_RANK() OVER (PARTITION BY category ORDER BY engagement_score DESC) to rank posts. Filter WHERE rank = 2.",
+        "tier3": "WITH ranked AS (SELECT category, post_id, engagement_score, DENSE_RANK() OVER (PARTITION BY category ORDER BY engagement_score DESC) AS dr FROM posts) SELECT category, post_id, engagement_score FROM ranked WHERE dr = 2 ORDER BY category"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'For second highest with ties, I need DENSE_RANK, not ROW_NUMBER or RANK. DENSE_RANK doesn't skip numbers after ties.'",
+        "detailsToCheck": "Clarify: Should ties both be considered 'second' (use DENSE_RANK) or should one be arbitrarily chosen (use ROW_NUMBER)? What about categories with only 1 post?",
+        "metaProductContext": "Finding second-best performers helps identify 'almost viral' content that might benefit from a boost. The difference between #1 and #2 engagement can inform content strategy.",
+        "avoidGeneric": "Explain the difference between ROW_NUMBER, RANK, and DENSE_RANK: ROW_NUMBER is unique, RANK skips after ties, DENSE_RANK doesn't skip.",
+        "followUpQuestion": "Interviewer may ask: 'How would you use this data to improve content recommendations?'"
+      },
+      "solution_sql": "WITH ranked AS (SELECT category, post_id, engagement_score, DENSE_RANK() OVER (PARTITION BY category ORDER BY engagement_score DESC) AS dr FROM posts) SELECT category, post_id, engagement_score FROM ranked WHERE dr = 2 ORDER BY category",
+      "tests": [
+        {
+          "name": "one_row_per_category",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = COUNT(DISTINCT category) AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('category', 'post_id', 'engagement_score')",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "is_second_highest",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM posts p WHERE p.category = r.category AND p.engagement_score > r.engagement_score GROUP BY p.category HAVING COUNT(DISTINCT p.engagement_score) < 1)",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["window functions", "DENSE_RANK", "ranking", "aggregation"],
+      "difficulty": "medium",
+      "section": "engagement",
+      "tables": ["posts"],
+      "estimatedMinutes": 10,
+      "beforeYouCode": [
+        "What window function handles ties correctly for 'second highest'?",
+        "How do we filter to only rank = 2?",
+        "What about categories with fewer than 2 posts?"
+      ],
+      "conceptExplanation": {
+        "skill": "Window Functions (DENSE_RANK)",
+        "explanation": "DENSE_RANK() handles ties correctly - if two posts tie for 1st, the next post is 2nd (not 3rd). Use PARTITION BY category to rank within each group, then filter WHERE rank = 2.",
+        "keyInsight": "DENSE_RANK for 'nth highest' - it doesn't skip ranks after ties.",
+        "relatedSkills": ["Window Functions"]
+      }
+    },
+    {
+      "id": "q15_cumulative_revenue",
+      "title": "Cumulative Revenue by Month",
+      "prompt": "Calculate the cumulative (running total) revenue by month for 2024. For each month, show both the monthly revenue and the year-to-date (YTD) cumulative revenue.\n\nReturn: month, monthly_revenue, ytd_revenue\n\nOrder by month ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "First aggregate transactions by month to get monthly_revenue. Then use a window function with SUM() OVER to calculate the running total.",
+        "tier2": "For cumulative sum, use: SUM(monthly_revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
+        "tier3": "WITH monthly AS (SELECT MONTH(transaction_date) AS month, SUM(amount) AS monthly_revenue FROM transactions WHERE YEAR(transaction_date) = 2024 GROUP BY MONTH(transaction_date)) SELECT month, monthly_revenue, SUM(monthly_revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS ytd_revenue FROM monthly ORDER BY month"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need a running total, so first I'll aggregate by month, then use SUM with a window frame from the start to the current row.'",
+        "detailsToCheck": "Clarify: Are we using calendar months? What if a month has no transactions - should it appear with 0 or be excluded?",
+        "metaProductContext": "YTD revenue tracking is fundamental to Meta's financial reporting. Every earnings call reports cumulative revenue metrics.",
+        "avoidGeneric": "Explain what 'UNBOUNDED PRECEDING' means - it starts from the first row in the partition. Compare to other frame options like '3 PRECEDING'.",
+        "followUpQuestion": "Interviewer may ask: 'Revenue growth is slowing. How would you break down the analysis?' (By product, region, customer segment)"
+      },
+      "solution_sql": "WITH monthly AS (SELECT MONTH(transaction_date) AS month, SUM(amount) AS monthly_revenue FROM transactions WHERE YEAR(transaction_date) = 2024 GROUP BY MONTH(transaction_date)) SELECT month, monthly_revenue, SUM(monthly_revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS ytd_revenue FROM monthly ORDER BY month",
+      "tests": [
+        {
+          "name": "returns_12_months",
+          "assert": "ROWCOUNT",
+          "expected": 12
+        },
+        {
+          "name": "ytd_never_less_than_monthly",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ytd_revenue < monthly_revenue",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('month', 'monthly_revenue', 'ytd_revenue')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["window functions", "running total", "cumulative", "SUM OVER"],
+      "difficulty": "medium",
+      "section": "metrics",
+      "tables": ["transactions"],
+      "estimatedMinutes": 10,
+      "beforeYouCode": [
+        "What does 'cumulative' mean in SQL terms?",
+        "How do we specify 'from start of year to current row'?",
+        "What window frame do we need?"
+      ],
+      "conceptExplanation": {
+        "skill": "Running Total (SUM OVER)",
+        "explanation": "Cumulative sums use SUM() with a window frame: ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. This adds up all values from the first row to the current row within the partition.",
+        "keyInsight": "SUM() OVER (ORDER BY ... ROWS UNBOUNDED PRECEDING) = running total.",
+        "relatedSkills": ["Window Functions", "Date Range Calculations"]
+      }
+    },
+    {
+      "id": "q16_mutual_friends_count",
+      "title": "Mutual Friends Count",
+      "prompt": "For pairs of users who are NOT already friends, count how many mutual friends they have. Only include pairs with at least 3 mutual friends.\n\nA mutual friend is someone who is friends with BOTH users in the pair.\n\nReturn: user1_id, user2_id, mutual_friend_count\nwhere user1_id < user2_id (to avoid duplicates)\n\nOrder by mutual_friend_count DESC, user1_id ASC, user2_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "For users A and B, a mutual friend C means both (A,C) and (B,C) are friendships. This requires a self-join on the friendships table. Also exclude pairs who are already friends.",
+        "tier2": "Create a normalized friends view (both directions). For each user pair (A,B), count users C who appear in both A's friends and B's friends. Use NOT EXISTS to exclude existing friendships.",
+        "tier3": "WITH all_friends AS (SELECT user1_id AS user_id, user2_id AS friend_id FROM friendships UNION SELECT user2_id AS user_id, user1_id AS friend_id FROM friendships) SELECT a.user_id AS user1_id, b.user_id AS user2_id, COUNT(DISTINCT a.friend_id) AS mutual_friend_count FROM all_friends a JOIN all_friends b ON a.friend_id = b.friend_id AND a.user_id < b.user_id WHERE NOT EXISTS (SELECT 1 FROM all_friends f WHERE f.user_id = a.user_id AND f.friend_id = b.user_id) GROUP BY a.user_id, b.user_id HAVING COUNT(DISTINCT a.friend_id) >= 3 ORDER BY mutual_friend_count DESC, user1_id ASC, user2_id ASC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'Mutual friends is a graph problem. For users A and B, I need to find all C where both A-C and B-C exist. This is a self-join where both pairs share the same friend.'",
+        "detailsToCheck": "How is friendship stored? Need to handle both directions. How do we ensure user1_id < user2_id? How do we exclude existing friends?",
+        "metaProductContext": "This powers 'People You May Know' - one of Facebook's most important growth features. Mutual friend count is the #1 signal for friend suggestions.",
+        "avoidGeneric": "Discuss the algorithmic complexity: this is O(n²) in users times O(friends) - at Facebook scale, this needs sophisticated optimization.",
+        "followUpQuestion": "Interviewer may ask: 'How would you scale this to billions of users?' (Graph partitioning, approximate algorithms, pre-computation)"
+      },
+      "solution_sql": "WITH all_friends AS (SELECT user1_id AS user_id, user2_id AS friend_id FROM friendships UNION SELECT user2_id AS user_id, user1_id AS friend_id FROM friendships) SELECT a.user_id AS user1_id, b.user_id AS user2_id, COUNT(DISTINCT a.friend_id) AS mutual_friend_count FROM all_friends a JOIN all_friends b ON a.friend_id = b.friend_id AND a.user_id < b.user_id WHERE NOT EXISTS (SELECT 1 FROM all_friends f WHERE f.user_id = a.user_id AND f.friend_id = b.user_id) GROUP BY a.user_id, b.user_id HAVING COUNT(DISTINCT a.friend_id) >= 3 ORDER BY mutual_friend_count DESC, user1_id ASC, user2_id ASC",
+      "tests": [
+        {
+          "name": "all_have_3plus_mutual",
+          "assert": "SQL",
+          "sql": "SELECT MIN(mutual_friend_count) >= 3 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "user1_less_than_user2",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE user1_id >= user2_id",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "no_existing_friendships",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM friendships f WHERE (f.user1_id = r.user1_id AND f.user2_id = r.user2_id) OR (f.user1_id = r.user2_id AND f.user2_id = r.user1_id))",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 3000, "row_limit": 1000 },
+      "tags": ["self-join", "graph", "mutual friends", "NOT EXISTS"],
+      "difficulty": "hard",
+      "section": "advanced",
+      "tables": ["friendships"],
+      "estimatedMinutes": 15,
+      "beforeYouCode": [
+        "How do we find all possible user pairs?",
+        "How do we identify mutual friends for a pair?",
+        "How do we handle bidirectional friendships?"
+      ],
+      "conceptExplanation": {
+        "skill": "Graph Query (Self-Join)",
+        "explanation": "Mutual friends require a graph traversal: for users A and B, find all C where (A,C) and (B,C) are both friendships. This is a double self-join on the friendships table, plus anti-join to exclude existing (A,B) friendships.",
+        "keyInsight": "Mutual friends = intersection of friend lists = self-join where both pairs exist.",
+        "relatedSkills": ["Self-Joins", "Anti-Join Pattern"]
+      }
+    },
+    {
+      "id": "q17_dau_mau_stickiness",
+      "title": "DAU/MAU Stickiness Ratio",
+      "prompt": "Calculate the DAU/MAU ratio (stickiness) for each month in 2024.\n\n- DAU = Average Daily Active Users in the month (average of daily distinct user counts)\n- MAU = Monthly Active Users (distinct users in the month)\n- Stickiness = (DAU / MAU) * 100\n\nA user is 'active' if they have any record in the actions table for that day/month.\n\nReturn: month, avg_dau, mau, stickiness_ratio (rounded to 2 decimal places)\n\nOrder by month ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "First calculate daily active users for each day. Then for each month, calculate the average DAU and the total MAU. Finally compute the ratio.",
+        "tier2": "Use CTEs: (1) daily_users for distinct users per day, (2) monthly_stats for AVG(daily_count) as DAU and COUNT(DISTINCT user_id) as MAU per month.",
+        "tier3": "WITH daily_users AS (SELECT action_date, COUNT(DISTINCT user_id) AS daily_count FROM actions WHERE YEAR(action_date) = 2024 GROUP BY action_date), monthly_stats AS (SELECT MONTH(action_date) AS month, AVG(daily_count) AS avg_dau, COUNT(DISTINCT user_id) AS mau FROM actions a JOIN daily_users d ON a.action_date = d.action_date WHERE YEAR(a.action_date) = 2024 GROUP BY MONTH(a.action_date)) SELECT month, ROUND(avg_dau, 2) AS avg_dau, mau, ROUND(100.0 * avg_dau / mau, 2) AS stickiness_ratio FROM monthly_stats ORDER BY month"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'DAU/MAU tells us stickiness - what fraction of monthly users come back daily. I need average of daily counts divided by monthly unique count.'",
+        "detailsToCheck": "Clarify: Is DAU the daily distinct count or something else? Should days with zero activity be included in the average?",
+        "metaProductContext": "DAU/MAU is THE key engagement metric at Meta - reported in every quarterly earnings. Facebook typically runs 60-70% stickiness. Higher = users return daily.",
+        "avoidGeneric": "Explain why MAU ≠ sum of DAUs (same user counted multiple days). Also discuss what 'good' stickiness looks like for different products.",
+        "followUpQuestion": "Interviewer may ask: 'Stickiness dropped from 65% to 55%. What would you investigate?' (By user segment, content type, platform)"
+      },
+      "solution_sql": "WITH daily_counts AS (SELECT action_date, COUNT(DISTINCT user_id) AS daily_count FROM actions WHERE YEAR(action_date) = 2024 GROUP BY action_date), monthly_dau AS (SELECT MONTH(action_date) AS month, AVG(daily_count) AS avg_dau FROM daily_counts GROUP BY MONTH(action_date)), monthly_mau AS (SELECT MONTH(action_date) AS month, COUNT(DISTINCT user_id) AS mau FROM actions WHERE YEAR(action_date) = 2024 GROUP BY MONTH(action_date)) SELECT d.month, ROUND(d.avg_dau, 2) AS avg_dau, m.mau, ROUND(100.0 * d.avg_dau / m.mau, 2) AS stickiness_ratio FROM monthly_dau d JOIN monthly_mau m ON d.month = m.month ORDER BY d.month",
+      "tests": [
+        {
+          "name": "returns_12_months",
+          "assert": "ROWCOUNT",
+          "expected": 12
+        },
+        {
+          "name": "stickiness_between_0_and_100",
+          "assert": "SQL",
+          "sql": "SELECT MIN(stickiness_ratio) >= 0 AND MAX(stickiness_ratio) <= 100 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('month', 'avg_dau', 'mau', 'stickiness_ratio')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["DAU/MAU", "stickiness", "engagement metrics", "aggregation"],
+      "difficulty": "medium",
+      "section": "retention",
+      "tables": ["actions"],
+      "estimatedMinutes": 10,
+      "beforeYouCode": [
+        "How do we calculate DAU for each day first?",
+        "How do we then average DAU across the month?",
+        "Why is MAU different from sum of DAUs?"
+      ],
+      "conceptExplanation": {
+        "skill": "Ratio with Date Aggregation",
+        "explanation": "DAU/MAU stickiness requires two-level aggregation: (1) daily distinct users (DAU), (2) monthly distinct users (MAU) and average of DAUs. The ratio tells you how 'sticky' users are - higher = same users returning daily.",
+        "keyInsight": "Stickiness = avg(DAU) / MAU - measures daily engagement relative to monthly reach.",
+        "relatedSkills": ["Aggregation with Filtering", "Ratio & Percentage Metrics"]
+      }
+    },
+    {
+      "id": "q18_deduplicate_records",
+      "title": "Deduplicate User Records",
+      "prompt": "The user_records table contains duplicate entries for some users. For each user_id, keep only the most recent record (based on updated_at timestamp).\n\nReturn all columns from the deduplicated records: user_id, name, email, updated_at\n\nOrder by user_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use ROW_NUMBER() to rank records within each user_id, ordered by updated_at descending. Then filter to keep only rank 1.",
+        "tier2": "ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC) gives each record a number within its user group. Filter WHERE row_num = 1.",
+        "tier3": "WITH ranked AS (SELECT user_id, name, email, updated_at, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC) AS rn FROM user_records) SELECT user_id, name, email, updated_at FROM ranked WHERE rn = 1 ORDER BY user_id"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'To deduplicate, I'll use ROW_NUMBER partitioned by user_id, ordered by updated_at descending. Row number 1 is the most recent record for each user.'",
+        "detailsToCheck": "Clarify: What if two records have the same updated_at? Should we pick arbitrarily or use another tiebreaker?",
+        "metaProductContext": "Data deduplication is a constant challenge at Meta's scale. User records can be duplicated from multiple sources, migrations, or bugs.",
+        "avoidGeneric": "Discuss why ROW_NUMBER vs RANK: we want exactly one record per user, so ROW_NUMBER (which is always unique) is correct.",
+        "followUpQuestion": "Interviewer may ask: 'How would you prevent duplicates from being created in the first place?' (Primary keys, unique constraints, upsert logic)"
+      },
+      "solution_sql": "WITH ranked AS (SELECT user_id, name, email, updated_at, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC) AS rn FROM user_records) SELECT user_id, name, email, updated_at FROM ranked WHERE rn = 1 ORDER BY user_id",
+      "tests": [
+        {
+          "name": "no_duplicate_users",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = COUNT(DISTINCT user_id) AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'name', 'email', 'updated_at')",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "most_recent_kept",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM user_records ur WHERE ur.user_id = r.user_id AND ur.updated_at > r.updated_at)",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["deduplication", "ROW_NUMBER", "window functions", "data cleaning"],
+      "difficulty": "medium",
+      "section": "metrics",
+      "tables": ["user_records"],
+      "estimatedMinutes": 8,
+      "beforeYouCode": [
+        "How do we identify duplicates per user?",
+        "How do we keep only the 'most recent' one?",
+        "What window function assigns row numbers within groups?"
+      ],
+      "conceptExplanation": {
+        "skill": "Data Cleaning (Deduplication)",
+        "explanation": "Deduplication uses ROW_NUMBER() OVER (PARTITION BY key ORDER BY priority DESC) to rank records within each group. Filter WHERE row_num = 1 to keep only the top record per group.",
+        "keyInsight": "ROW_NUMBER + PARTITION BY + filter row_num = 1 = keep one per group.",
+        "relatedSkills": ["Window Functions"]
+      }
+    },
+    {
+      "id": "q19_first_activity",
+      "title": "First Activity and Total Activities",
+      "prompt": "For each user, find:\n1. Their first activity date (first_activity_date)\n2. The total number of activities they've performed since their first activity\n\nOnly include users who have at least one activity.\n\nReturn: user_id, first_activity_date, total_activities\n\nOrder by user_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use aggregate functions: MIN() for the first date, COUNT(*) for total activities. Group by user_id.",
+        "tier2": "SELECT user_id, MIN(action_date), COUNT(*) - these can all be calculated in one GROUP BY query.",
+        "tier3": "SELECT user_id, MIN(action_date) AS first_activity_date, COUNT(*) AS total_activities FROM actions GROUP BY user_id ORDER BY user_id"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need the first activity date and total count per user. MIN() gives the earliest date, COUNT(*) gives the total. I can do both in one GROUP BY.'",
+        "detailsToCheck": "Clarify: Should we count distinct action types or all actions? What if a user has no activities - should they appear with NULL/0?",
+        "metaProductContext": "First activity tracking is key for cohort analysis and onboarding funnels. 'Time to first action' is a critical new user metric.",
+        "avoidGeneric": "Mention that you could also use FIRST_VALUE window function, but GROUP BY with MIN is simpler and more efficient for this case.",
+        "followUpQuestion": "Interviewer may ask: 'How would you use this data to improve new user activation?'"
+      },
+      "solution_sql": "SELECT user_id, MIN(action_date) AS first_activity_date, COUNT(*) AS total_activities FROM actions GROUP BY user_id ORDER BY user_id",
+      "tests": [
+        {
+          "name": "all_users_have_activities",
+          "assert": "SQL",
+          "sql": "SELECT MIN(total_activities) >= 1 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'first_activity_date', 'total_activities')",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "first_date_is_earliest",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM actions a WHERE a.user_id = r.user_id AND a.action_date < r.first_activity_date)",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["aggregation", "MIN", "COUNT", "GROUP BY"],
+      "difficulty": "easy",
+      "section": "engagement",
+      "tables": ["actions"],
+      "estimatedMinutes": 6,
+      "beforeYouCode": [
+        "What aggregate function finds the earliest date?",
+        "How do we count total activities for each user?",
+        "Can we do both in one query?"
+      ],
+      "conceptExplanation": {
+        "skill": "First Value Pattern",
+        "explanation": "Finding 'first' values uses MIN() for dates/numbers or FIRST_VALUE() window function. Combined with COUNT() in a GROUP BY, you can get both first occurrence and total count in one pass.",
+        "keyInsight": "MIN(date) = first date, COUNT(*) = total - both in one GROUP BY.",
+        "relatedSkills": ["Aggregation with Filtering"]
+      }
+    },
+    {
+      "id": "q20_yoy_mau_growth",
+      "title": "Year-over-Year MAU Growth",
+      "prompt": "Calculate the Year-over-Year (YoY) growth rate for Monthly Active Users. For each month in 2024, compare the MAU to the same month in 2023.\n\nYoY Growth = ((MAU_2024 - MAU_2023) / MAU_2023) * 100\n\nReturn: month, mau_2024, mau_2023, yoy_growth_rate (rounded to 2 decimal places)\n\nOnly include months where we have data for both years.\n\nOrder by month ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You need to match each month in 2024 with the same month in 2023. Use a self-join on the month column where years are different.",
+        "tier2": "Join monthly_active to itself: one side filtered to 2024, the other to 2023, matching on month. Then calculate the percentage change.",
+        "tier3": "SELECT m24.month, m24.mau AS mau_2024, m23.mau AS mau_2023, ROUND(100.0 * (m24.mau - m23.mau) / m23.mau, 2) AS yoy_growth_rate FROM monthly_active m24 JOIN monthly_active m23 ON m24.month = m23.month WHERE m24.year = 2024 AND m23.year = 2023 ORDER BY m24.month"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'YoY comparison needs to match each 2024 month with its 2023 equivalent. I'll self-join the monthly_active table on month where years differ.'",
+        "detailsToCheck": "Clarify: What if a month has data in 2024 but not 2023? Should we show NULL or exclude? Is MAU pre-calculated or do we need to compute it?",
+        "metaProductContext": "YoY growth is the standard metric for investor communications. Meta reports MAU growth YoY in every earnings call. Slowing YoY growth signals market saturation.",
+        "avoidGeneric": "Discuss the limitation of YoY: it doesn't show monthly trends. Also mention you'd want to look at absolute numbers alongside percentages.",
+        "followUpQuestion": "Interviewer may ask: 'YoY growth is slowing from 15% to 5%. Is this concerning?' (Depends on market saturation, compare to competitors)"
+      },
+      "solution_sql": "SELECT m24.month, m24.mau AS mau_2024, m23.mau AS mau_2023, ROUND(100.0 * (m24.mau - m23.mau) / m23.mau, 2) AS yoy_growth_rate FROM monthly_active m24 JOIN monthly_active m23 ON m24.month = m23.month WHERE m24.year = 2024 AND m23.year = 2023 ORDER BY m24.month",
+      "tests": [
+        {
+          "name": "returns_12_months",
+          "assert": "ROWCOUNT",
+          "expected": 12
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('month', 'mau_2024', 'mau_2023', 'yoy_growth_rate')",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "growth_formula_correct",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ABS(yoy_growth_rate - ROUND(100.0 * (mau_2024 - mau_2023) / mau_2023, 2)) > 0.01",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["YoY growth", "self-join", "period comparison", "metrics"],
+      "difficulty": "medium",
+      "section": "retention",
+      "tables": ["monthly_active"],
+      "estimatedMinutes": 12,
+      "beforeYouCode": [
+        "How do we match Jan 2024 with Jan 2023?",
+        "What if a month is missing in one year?",
+        "Should we use LAG or a self-join?"
+      ],
+      "conceptExplanation": {
+        "skill": "Period Comparison (YoY/MoM)",
+        "explanation": "Year-over-Year comparison can use: (1) LAG() with offset = 12 months, or (2) self-join matching month numbers across years. Self-join is clearer when comparing specific periods. Calculate percentage change with the standard formula.",
+        "keyInsight": "YoY = self-join on month, different years. Growth = (new - old) / old * 100.",
+        "relatedSkills": ["Window Functions", "Ratio & Percentage Metrics"]
       }
     }
   ]

@@ -159,7 +159,7 @@
         {
           "name": "returns_correct_count",
           "assert": "ROWCOUNT",
-          "expected": 4
+          "expected": 6
         },
         {
           "name": "all_amounts_above_150",
@@ -215,9 +215,9 @@
       "solution_sql": "SELECT * FROM customers WHERE country = 'Brazil' OR country = 'USA'",
       "tests": [
         {
-          "name": "returns_four_rows",
+          "name": "returns_three_rows",
           "assert": "ROWCOUNT",
-          "expected": 4
+          "expected": 3
         }
       ],
       "limits": {

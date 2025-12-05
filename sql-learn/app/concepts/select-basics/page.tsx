@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { InteractiveExample } from "@/app/components/concepts/InteractiveExample";
+import { selectExamples } from "@/app/lib/concept-examples";
 
 export default function SelectBasicsPage() {
   const [activeExample, setActiveExample] = useState(0);
+  const [activeVisualExample, setActiveVisualExample] = useState(0);
 
   const examples = [
     {
@@ -140,6 +143,36 @@ FROM table_name;`}</code>
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Visual Interactive Examples */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">See It In Action</h2>
+            <p className="text-gray-700 mb-6">
+              Watch how SELECT retrieves and transforms data step by step.
+            </p>
+
+            {/* Example Selector Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {selectExamples.map((example, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveVisualExample(idx)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    activeVisualExample === idx
+                      ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md"
+                      : "bg-white text-gray-700 border-2 border-gray-200 hover:border-teal-300 hover:bg-teal-50"
+                  }`}
+                >
+                  {example.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Visual Example */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8">
+              <InteractiveExample example={selectExamples[activeVisualExample]} />
             </div>
           </section>
 

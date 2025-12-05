@@ -2,9 +2,48 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { JoinDiagram } from "@/app/components/concepts/JoinDiagram";
+import { CopyButton } from "@/app/components/concepts/CopyButton";
+import type { SampleTable } from "@/app/lib/concept-examples";
 
 export default function JoinsIntroPage() {
   const [activeExample, setActiveExample] = useState(0);
+
+  // Sample tables for JOIN visualization
+  const customersForJoin: SampleTable = {
+    name: "customers",
+    columns: [
+      { name: "id", type: "INT" },
+      { name: "name", type: "TEXT" },
+    ],
+    rows: [
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+      { id: 3, name: "Carlos" },
+      { id: 4, name: "Diana" },
+      { id: 5, name: "Emma" },
+    ],
+  };
+
+  const ordersForJoin: SampleTable = {
+    name: "orders",
+    columns: [
+      { name: "order_id", type: "INT" },
+      { name: "customer_id", type: "INT" },
+      { name: "amount", type: "DECIMAL" },
+    ],
+    rows: [
+      { order_id: 101, customer_id: 1, amount: 1200 },
+      { order_id: 102, customer_id: 1, amount: 25 },
+      { order_id: 103, customer_id: 2, amount: 75 },
+      { order_id: 104, customer_id: 3, amount: 350 },
+      { order_id: 105, customer_id: 3, amount: 120 },
+      { order_id: 106, customer_id: 4, amount: 150 },
+      { order_id: 107, customer_id: 99, amount: 500 }, // Orphaned order - no matching customer!
+      // Note: Emma (id: 5) has no orders - demonstrates LEFT JOIN
+      // Order 107 (customer_id: 99) has no matching customer - demonstrates FULL JOIN
+    ],
+  };
 
   const examples = [
     {
@@ -147,9 +186,16 @@ export default function JoinsIntroPage() {
           {/* Basic Syntax */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Basic JOIN Syntax</h2>
-            <div className="bg-gray-900 rounded-xl p-6 overflow-x-auto">
-              <pre className="text-gray-100 font-mono text-sm">
-                <code>{`SELECT table1.column, table2.column
+            <div className="bg-gray-900 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                <span className="text-xs text-gray-400 font-mono">SQL Syntax</span>
+                <CopyButton text={`SELECT table1.column, table2.column
+FROM table1
+JOIN table2
+  ON table1.common_column = table2.common_column;`} />
+              </div>
+              <pre className="p-6 overflow-x-auto">
+                <code className="text-gray-100 font-mono text-sm">{`SELECT table1.column, table2.column
 FROM table1
 JOIN table2
   ON table1.common_column = table2.common_column;`}</code>
@@ -160,6 +206,36 @@ JOIN table2
                 <strong>💡 Pro Tip:</strong> The ON clause specifies how tables are related. It's usually matching a
                 primary key (id) in one table to a foreign key (customer_id) in another.
               </p>
+            </div>
+          </section>
+
+          {/* Interactive JOIN Visualizer */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Visualize JOINs</h2>
+            <p className="text-gray-600 mb-6">
+              See how different JOIN types work! Switch between INNER, LEFT, RIGHT, and FULL OUTER JOINs to understand which rows are included in the result.
+            </p>
+
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8">
+              <JoinDiagram
+                leftTable={customersForJoin}
+                rightTable={ordersForJoin}
+                leftJoinColumn="id"
+                rightJoinColumn="customer_id"
+              />
+            </div>
+
+            <div className="mt-4 bg-teal-50 border-l-4 border-teal-500 p-4 rounded-r-lg">
+              <p className="text-teal-900 text-sm mb-2">
+                <strong>💡 Key Insights:</strong>
+              </p>
+              <ul className="text-teal-900 text-sm space-y-1 list-disc list-inside">
+                <li><strong>Emma (id: 5)</strong> has no orders - demonstrates LEFT JOIN (includes Emma with NULL)</li>
+                <li><strong>Order 107 (customer_id: 99)</strong> has no matching customer - demonstrates FULL JOIN difference</li>
+                <li><strong>INNER JOIN</strong> excludes both Emma and order 107</li>
+                <li><strong>LEFT JOIN</strong> includes Emma but excludes order 107</li>
+                <li><strong>FULL JOIN</strong> includes both Emma and order 107</li>
+              </ul>
             </div>
           </section>
 
@@ -174,9 +250,9 @@ JOIN table2
                   <button
                     key={idx}
                     onClick={() => setActiveExample(idx)}
-                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-all ${
                       activeExample === idx
-                        ? "bg-white text-teal-600 border-b-2 border-teal-600"
+                        ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
@@ -189,9 +265,13 @@ JOIN table2
                 <p className="text-gray-700 mb-4">{examples[activeExample].description}</p>
 
                 {/* SQL Code */}
-                <div className="bg-gray-900 rounded-xl p-4 mb-4">
-                  <pre className="text-gray-100 font-mono text-sm">
-                    <code>{examples[activeExample].sql}</code>
+                <div className="bg-gray-900 rounded-xl overflow-hidden mb-4">
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                    <span className="text-xs text-gray-400 font-mono">SQL Query</span>
+                    <CopyButton text={examples[activeExample].sql} />
+                  </div>
+                  <pre className="p-4 overflow-x-auto">
+                    <code className="text-gray-100 font-mono text-sm">{examples[activeExample].sql}</code>
                   </pre>
                 </div>
 

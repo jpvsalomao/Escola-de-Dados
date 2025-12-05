@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { InteractiveExample } from "@/app/components/concepts/InteractiveExample";
+import { CopyButton } from "@/app/components/concepts/CopyButton";
+import { groupByExamples } from "@/app/lib/concept-examples";
 
 export default function GroupByPage() {
   const [activeExample, setActiveExample] = useState(0);
+  const [activeVisualExample, setActiveVisualExample] = useState(0);
 
   const examples = [
     {
@@ -89,9 +93,18 @@ export default function GroupByPage() {
           {/* Basic Syntax */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Basic Syntax</h2>
-            <div className="bg-gray-900 rounded-xl p-6 overflow-x-auto">
-              <pre className="text-gray-100 font-mono text-sm">
-                <code>{`SELECT column_name, AGGREGATE_FUNCTION(column)
+            <div className="bg-gray-900 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                <span className="text-xs text-gray-400 font-mono">SQL Syntax</span>
+                <CopyButton text={`SELECT column_name, AGGREGATE_FUNCTION(column)
+FROM table_name
+WHERE condition
+GROUP BY column_name
+HAVING group_condition
+ORDER BY column_name;`} />
+              </div>
+              <pre className="p-6 overflow-x-auto">
+                <code className="text-gray-100 font-mono text-sm">{`SELECT column_name, AGGREGATE_FUNCTION(column)
 FROM table_name
 WHERE condition
 GROUP BY column_name
@@ -118,9 +131,9 @@ ORDER BY column_name;`}</code>
                   <button
                     key={idx}
                     onClick={() => setActiveExample(idx)}
-                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-all ${
                       activeExample === idx
-                        ? "bg-white text-teal-600 border-b-2 border-teal-600"
+                        ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
@@ -133,9 +146,13 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 mb-4">{examples[activeExample].description}</p>
 
                 {/* SQL Code */}
-                <div className="bg-gray-900 rounded-xl p-4 mb-4">
-                  <pre className="text-gray-100 font-mono text-sm">
-                    <code>{examples[activeExample].sql}</code>
+                <div className="bg-gray-900 rounded-xl overflow-hidden mb-4">
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                    <span className="text-xs text-gray-400 font-mono">SQL Query</span>
+                    <CopyButton text={examples[activeExample].sql} />
+                  </div>
+                  <pre className="p-4 overflow-x-auto">
+                    <code className="text-gray-100 font-mono text-sm">{examples[activeExample].sql}</code>
                   </pre>
                 </div>
 
@@ -154,6 +171,36 @@ ORDER BY column_name;`}</code>
             </div>
           </section>
 
+          {/* Visual Interactive Examples */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">See Aggregation In Action</h2>
+            <p className="text-gray-700 mb-6">
+              Watch how GROUP BY transforms raw data into summary statistics step by step.
+            </p>
+
+            {/* Example Selector Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {groupByExamples.map((example, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveVisualExample(idx)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    activeVisualExample === idx
+                      ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md"
+                      : "bg-white text-gray-700 border-2 border-gray-200 hover:border-teal-300 hover:bg-teal-50"
+                  }`}
+                >
+                  {example.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Visual Example */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 md:p-8">
+              <InteractiveExample example={groupByExamples[activeVisualExample]} />
+            </div>
+          </section>
+
           {/* Aggregate Functions */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Aggregate Functions</h2>
@@ -168,7 +215,9 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 text-sm mb-2">
                   Counts the number of rows in each group.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-2">COUNT(*)</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">COUNT(*)</code>
+                </div>
                 <p className="text-gray-600 text-xs">
                   Use COUNT(*) for all rows, COUNT(column) to exclude NULLs
                 </p>
@@ -184,7 +233,9 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 text-sm mb-2">
                   Adds up all values in a numeric column.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-2">SUM(amount)</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">SUM(amount)</code>
+                </div>
                 <p className="text-gray-600 text-xs">
                   Only works with numeric columns
                 </p>
@@ -200,7 +251,9 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 text-sm mb-2">
                   Calculates the average (mean) of numeric values.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-2">AVG(price)</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">AVG(price)</code>
+                </div>
                 <p className="text-gray-600 text-xs">
                   NULL values are excluded from calculation
                 </p>
@@ -216,7 +269,9 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 text-sm mb-2">
                   Finds the largest value in each group.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-2">MAX(salary)</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">MAX(salary)</code>
+                </div>
                 <p className="text-gray-600 text-xs">
                   Works with numbers, text (alphabetically), and dates
                 </p>
@@ -232,7 +287,9 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 text-sm mb-2">
                   Finds the smallest value in each group.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-2">MIN(price)</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">MIN(price)</code>
+                </div>
                 <p className="text-gray-600 text-xs">
                   Works with numbers, text (alphabetically), and dates
                 </p>
@@ -248,7 +305,9 @@ ORDER BY column_name;`}</code>
                 <p className="text-gray-700 text-sm mb-2">
                   Combine multiple functions in one query.
                 </p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-2">COUNT(*), AVG(price), MAX(price)</code>
+                <div className="bg-gray-100 px-2 py-1 rounded mb-2 overflow-x-auto">
+                  <code className="text-gray-900 text-xs whitespace-nowrap">COUNT(*), AVG(price), MAX(price)</code>
+                </div>
                 <p className="text-gray-600 text-xs">
                   Get comprehensive statistics in a single query
                 </p>
@@ -307,9 +366,18 @@ ORDER BY column_name;`}</code>
 
             <div className="mt-6 bg-white rounded-xl border-2 border-gray-200 p-6">
               <h4 className="font-bold text-gray-900 mb-3">Complete Example Using Both</h4>
-              <div className="bg-gray-900 rounded-lg p-4">
-                <pre className="text-gray-100 font-mono text-xs">
-                  <code>{`SELECT country, COUNT(*) AS customer_count, AVG(age) AS avg_age
+              <div className="bg-gray-900 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                  <span className="text-xs text-gray-400 font-mono">WHERE & HAVING Example</span>
+                  <CopyButton text={`SELECT country, COUNT(*) AS customer_count, AVG(age) AS avg_age
+FROM customers
+WHERE age >= 18                    -- Filter rows: only adults
+GROUP BY country                   -- Group by country
+HAVING COUNT(*) > 5                -- Filter groups: only countries with 5+ customers
+ORDER BY customer_count DESC;      -- Sort results`} />
+                </div>
+                <pre className="p-4">
+                  <code className="text-gray-100 font-mono text-xs">{`SELECT country, COUNT(*) AS customer_count, AVG(age) AS avg_age
 FROM customers
 WHERE age >= 18                    -- Filter rows: only adults
 GROUP BY country                   -- Group by country

@@ -65,7 +65,7 @@
       "prompt": "Write a query to retrieve customer names along with their order amounts. Use INNER JOIN to combine the customers and orders tables.",
       "dialect": "duckdb",
       "hint": "Use INNER JOIN on customer_id. Select name from customers and amount from orders.",
-      "solution_sql": "SELECT c.name, o.amount FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id;",
+      "solution_sql": "SELECT c.name, o.amount FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id",
       "tests": [
         {
           "name": "returns_correct_row_count",
@@ -93,7 +93,7 @@
       "prompt": "Find all customers who have placed orders with amount greater than 150. Use a subquery in the WHERE clause.",
       "dialect": "duckdb",
       "hint": "Use WHERE customer_id IN (SELECT customer_id FROM orders WHERE amount > 150).",
-      "solution_sql": "SELECT * FROM customers WHERE customer_id IN (SELECT customer_id FROM orders WHERE amount > 150);",
+      "solution_sql": "SELECT * FROM customers WHERE customer_id IN (SELECT customer_id FROM orders WHERE amount > 150)",
       "tests": [
         {
           "name": "returns_correct_customers",
@@ -115,7 +115,7 @@
       "prompt": "Create a query that categorizes orders as 'High' (amount >= 150), 'Medium' (amount >= 100), or 'Low' (amount < 100). Return order_id and the category.",
       "dialect": "duckdb",
       "hint": "Use CASE WHEN amount >= 150 THEN 'High' WHEN amount >= 100 THEN 'Medium' ELSE 'Low' END.",
-      "solution_sql": "SELECT order_id, CASE WHEN amount >= 150 THEN 'High' WHEN amount >= 100 THEN 'Medium' ELSE 'Low' END AS category FROM orders;",
+      "solution_sql": "SELECT order_id, CASE WHEN amount >= 150 THEN 'High' WHEN amount >= 100 THEN 'Medium' ELSE 'Low' END AS category FROM orders",
       "tests": [
         {
           "name": "returns_all_orders",
@@ -143,7 +143,7 @@
       "prompt": "Find customers who have placed more than 1 order. Show customer_id and the count of orders. Use GROUP BY with HAVING.",
       "dialect": "duckdb",
       "hint": "Use GROUP BY customer_id HAVING COUNT(*) > 1.",
-      "solution_sql": "SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id HAVING COUNT(*) > 1 ORDER BY customer_id;",
+      "solution_sql": "SELECT customer_id, COUNT(*) AS order_count FROM orders GROUP BY customer_id HAVING COUNT(*) > 1 ORDER BY customer_id",
       "tests": [
         {
           "name": "returns_correct_customers",
@@ -177,7 +177,7 @@
       "prompt": "Calculate the average order amount for each country. Join customers and orders, then group by country. Show country and avg_amount, ordered by avg_amount descending.",
       "dialect": "duckdb",
       "hint": "Use INNER JOIN, then GROUP BY country and calculate AVG(amount). Don't forget ORDER BY.",
-      "solution_sql": "SELECT c.country, AVG(o.amount) AS avg_amount FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.country ORDER BY avg_amount DESC;",
+      "solution_sql": "SELECT c.country, AVG(o.amount) AS avg_amount FROM customers c INNER JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.country ORDER BY avg_amount DESC",
       "tests": [
         {
           "name": "returns_all_countries",
