@@ -51,6 +51,13 @@ export interface Challenge {
     tier2?: string; // More specific direction
     tier3?: string; // Near-solution guidance
   };
+  interviewTips?: {
+    thinkOutLoud?: string; // What to verbalize as you code
+    detailsToCheck?: string; // Table/column details to verify
+    metaProductContext?: string; // Real-world application at Meta
+    avoidGeneric?: string; // Specific pitfalls for this problem
+    followUpQuestion?: string; // Likely metric/experiment follow-up
+  };
   solution_sql: string;
   tests: Test[];
   limits: {
@@ -60,6 +67,15 @@ export interface Challenge {
   tags: string[];
   difficulty: "easy" | "medium" | "hard";
   section?: string; // Optional: section ID (v1.2+)
+  tables?: string[]; // Optional: tables required for this challenge (v1.2+)
+  estimatedMinutes?: number; // Optional: expected time to solve in minutes (v1.2+)
+  beforeYouCode?: string[]; // Optional: checklist of questions to consider before coding (v1.2+)
+  conceptExplanation?: {
+    skill: string; // Primary skill name (e.g., "Anti-Join Pattern")
+    explanation: string; // 2-3 sentence explanation of the concept
+    keyInsight: string; // One-liner "aha moment" for this pattern
+    relatedSkills?: string[]; // Other skills this touches
+  };
 }
 
 export type AssertType = "ROWCOUNT" | "SQL" | "SCHEMA_EQ" | "SET_EQ" | "NEAR";

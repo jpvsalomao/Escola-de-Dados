@@ -81,6 +81,7 @@ export async function getAvailablePacks(): Promise<Array<{ id: string; path: str
   return [
     { id: "pack_basics", path: "/packs/pack_basics" },
     { id: "pack_intermediate", path: "/packs/pack_intermediate" },
+    { id: "pack_meta_interview", path: "/packs/pack_meta_interview" },
   ];
 }
 

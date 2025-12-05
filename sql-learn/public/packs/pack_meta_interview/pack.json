@@ -1,0 +1,615 @@
+{
+  "schema_version": "1.2",
+  "min_app_version": "1.0.0",
+  "id": "pack_meta_interview",
+  "title": "Meta Data Scientist SQL Interview Prep",
+  "description": "10 verified SQL questions from Meta Data Scientist interviews (2024-2025). Practice the exact patterns Meta tests: user retention, CTR calculation, friend recommendations, and window functions. Each question includes interview tips aligned with Meta's official assessment criteria.",
+  "metadata": {
+    "author": "Escola de Dados",
+    "authorBio": "Curated from verified Meta interview questions with realistic Facebook-style datasets.",
+    "locale": "en",
+    "tags": ["interview", "meta", "facebook", "data-scientist", "advanced"],
+    "difficulty": "advanced",
+    "estimatedTimeMinutes": 180,
+    "prerequisites": [
+      "GROUP BY and HAVING clauses",
+      "JOINs (INNER, LEFT, SELF)",
+      "Subqueries and CTEs",
+      "Date functions and arithmetic",
+      "Window functions (basic understanding)"
+    ],
+    "learningObjectives": [
+      "Solve user retention and engagement problems",
+      "Calculate business metrics (CTR, churn rates)",
+      "Build recommendation systems with self-joins",
+      "Use window functions for rolling calculations",
+      "Master anti-join patterns for exclusion queries"
+    ]
+  },
+  "datasets": [
+    { "name": "users", "src": "users.parquet" },
+    { "name": "posts", "src": "posts.parquet" },
+    { "name": "pages", "src": "pages.parquet" },
+    { "name": "page_likes", "src": "page_likes.parquet" },
+    { "name": "actions", "src": "actions.parquet" },
+    { "name": "events", "src": "events.parquet" },
+    { "name": "event_attendance", "src": "event_attendance.parquet" },
+    { "name": "friendships", "src": "friendships.parquet" },
+    { "name": "calls", "src": "calls.parquet" },
+    { "name": "comments", "src": "comments.parquet" },
+    { "name": "signups", "src": "signups.parquet" },
+    { "name": "messenger_activity", "src": "messenger_activity.parquet" }
+  ],
+  "sections": {
+    "engagement": {
+      "title": "User Engagement",
+      "description": "Analyze user posting patterns and activity",
+      "icon": "lightning",
+      "color": "orange"
+    },
+    "retention": {
+      "title": "Retention & Churn",
+      "description": "Monthly active users and churn analysis",
+      "icon": "calculator",
+      "color": "indigo"
+    },
+    "metrics": {
+      "title": "Product Metrics",
+      "description": "CTR, conversion rates, and business KPIs",
+      "icon": "database",
+      "color": "teal"
+    },
+    "advanced": {
+      "title": "Advanced Patterns",
+      "description": "Self-joins, anti-joins, and window functions",
+      "icon": "link",
+      "color": "emerald"
+    }
+  },
+  "challenges": [
+    {
+      "id": "q1_average_post_hiatus",
+      "title": "Average Post Hiatus",
+      "prompt": "For users who posted at least 2 times in 2024, calculate the number of days between their first post and their last post in 2024.\n\nReturn: user_id, first_post_date, last_post_date, days_between\n\nOrder by days_between descending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Think about what aggregate functions give you the earliest and latest dates. How do you filter groups that have at least 2 items?",
+        "tier2": "Use GROUP BY user_id with HAVING COUNT(*) >= 2 to filter users with 2+ posts. For date difference in DuckDB, you can subtract dates directly or use DATEDIFF().",
+        "tier3": "SELECT user_id, MIN(post_date) AS first_post_date, MAX(post_date) AS last_post_date, DATEDIFF('day', MIN(post_date), MAX(post_date)) AS days_between FROM posts WHERE YEAR(post_date) = 2024 GROUP BY user_id HAVING COUNT(*) >= 2 ORDER BY days_between DESC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need to find users with 2+ posts in 2024, so I'll use GROUP BY with HAVING. Then I'll calculate the date difference between their first and last post using MIN and MAX.'",
+        "detailsToCheck": "Check if post_date includes a time component. Clarify: does '2+ posts' mean strictly greater than 1, or at least 2?",
+        "metaProductContext": "This measures user engagement patterns. Facebook uses post frequency to determine feed ranking and re-engagement notifications. Users with long gaps might need a 'We miss you' notification.",
+        "avoidGeneric": "Don't just say 'use GROUP BY'. Explain WHY HAVING vs WHERE: HAVING filters groups after aggregation, WHERE filters individual rows before grouping.",
+        "followUpQuestion": "Interviewer may ask: 'The average hiatus is 45 days. Is that good or bad? What would you do next?' (Connect to retention goals and benchmarks)"
+      },
+      "solution_sql": "SELECT user_id, MIN(post_date) AS first_post_date, MAX(post_date) AS last_post_date, DATEDIFF('day', MIN(post_date), MAX(post_date)) AS days_between FROM posts WHERE YEAR(post_date) = 2024 GROUP BY user_id HAVING COUNT(*) >= 2 ORDER BY days_between DESC",
+      "tests": [
+        {
+          "name": "returns_8_users",
+          "assert": "ROWCOUNT",
+          "expected": 8
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'first_post_date', 'last_post_date', 'days_between')",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "ordered_by_days_desc",
+          "assert": "SQL",
+          "sql": "WITH ranked AS (SELECT days_between, ROW_NUMBER() OVER (ORDER BY days_between DESC) as rn FROM ({{USER_SQL}})) SELECT (SELECT days_between FROM ranked WHERE rn = 1) >= (SELECT days_between FROM ranked WHERE rn = 2) AS ok",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["date functions", "group by", "having", "aggregation"],
+      "difficulty": "medium",
+      "section": "engagement",
+      "tables": ["posts"],
+      "estimatedMinutes": 8,
+      "beforeYouCode": [
+        "What year are we filtering posts for?",
+        "What's the minimum post count to include a user?",
+        "What columns should the output have?"
+      ],
+      "conceptExplanation": {
+        "skill": "Aggregation with Filtering",
+        "explanation": "When you need to analyze groups but only keep some groups (like 'users with 2+ posts'), you combine GROUP BY with HAVING. HAVING filters after aggregation, while WHERE filters before.",
+        "keyInsight": "HAVING is to groups what WHERE is to rows.",
+        "relatedSkills": ["Date Range Calculations"]
+      }
+    },
+    {
+      "id": "q2_mau_retention",
+      "title": "Monthly Active User Retention",
+      "prompt": "Find users who were active in BOTH June 2024 AND July 2024. A user is 'active' if they have at least one record in the actions table during that month.\n\nReturn: user_id (unique users only)\n\nOrder by user_id ascending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You need to find the intersection of users active in June AND users active in July. Think about using subqueries, EXISTS, or set operations.",
+        "tier2": "Create two sets: (1) users active in July, (2) users active in June. Find users in BOTH sets using IN, EXISTS, INTERSECT, or a self-join.",
+        "tier3": "SELECT DISTINCT user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 7 AND user_id IN (SELECT DISTINCT user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 6) ORDER BY user_id"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'This is a retention problem - I need users who appear in both months. I'll start with July users, then filter to only those who were also active in June.'",
+        "detailsToCheck": "Clarify the definition of 'active' - is any action sufficient, or specific action types? Are we looking at calendar months or rolling 30-day windows?",
+        "metaProductContext": "MAU retention is Meta's core health metric. The 'L28' (logged in 28 days) and month-over-month retention drive product decisions. This exact query pattern runs in Meta's growth dashboards.",
+        "avoidGeneric": "Don't just provide the query. Discuss alternative approaches: EXISTS vs IN vs INTERSECT. Mention that EXISTS can be more efficient for large tables.",
+        "followUpQuestion": "Interviewer may ask: 'Retention dropped from 80% to 70% this month. How would you investigate?' (Segment by country, device, new vs existing users)"
+      },
+      "solution_sql": "SELECT DISTINCT user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 7 AND user_id IN (SELECT DISTINCT user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 6) ORDER BY user_id",
+      "tests": [
+        {
+          "name": "returns_6_users",
+          "assert": "ROWCOUNT",
+          "expected": 6
+        },
+        {
+          "name": "all_users_active_in_july",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = (SELECT COUNT(*) FROM ({{USER_SQL}})) AS ok FROM ({{USER_SQL}}) u WHERE EXISTS (SELECT 1 FROM actions a WHERE a.user_id = u.user_id AND YEAR(a.action_date) = 2024 AND MONTH(a.action_date) = 7)",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "all_users_active_in_june",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = (SELECT COUNT(*) FROM ({{USER_SQL}})) AS ok FROM ({{USER_SQL}}) u WHERE EXISTS (SELECT 1 FROM actions a WHERE a.user_id = u.user_id AND YEAR(a.action_date) = 2024 AND MONTH(a.action_date) = 6)",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["subquery", "exists", "retention", "date functions"],
+      "difficulty": "hard",
+      "section": "retention",
+      "tables": ["actions"],
+      "estimatedMinutes": 12,
+      "beforeYouCode": [
+        "What defines 'active' - any action or specific types?",
+        "Which two months are we comparing?",
+        "Do we need unique users or can there be duplicates?"
+      ],
+      "conceptExplanation": {
+        "skill": "Set Operations & Existence",
+        "explanation": "Retention problems ask: 'Who is in Set A AND Set B?' You're finding the intersection of two groups of users. Approaches include IN subquery, EXISTS, INTERSECT, or self-join.",
+        "keyInsight": "Retention = intersection of user sets across time periods.",
+        "relatedSkills": ["Date Range Calculations"]
+      }
+    },
+    {
+      "id": "q3_click_through_rate",
+      "title": "Click-Through Rate (CTR)",
+      "prompt": "Calculate the click-through rate (CTR) for each app in the actions table for the year 2024.\n\nCTR = (number of 'click' actions / number of 'impression' actions) * 100\n\nRound the result to 2 decimal places. Only include apps that have at least 1 impression.\n\nReturn: app_id, ctr\n\nOrder by ctr descending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Use CASE WHEN inside an aggregate function to count clicks and impressions separately for each app.",
+        "tier2": "SUM(CASE WHEN action_type = 'click' THEN 1 ELSE 0 END) counts clicks. Divide by impression count, multiply by 100, and use ROUND() for 2 decimal places.",
+        "tier3": "SELECT app_id, ROUND(100.0 * SUM(CASE WHEN action_type = 'click' THEN 1 ELSE 0 END) / SUM(CASE WHEN action_type = 'impression' THEN 1 ELSE 0 END), 2) AS ctr FROM actions WHERE YEAR(action_date) = 2024 GROUP BY app_id HAVING SUM(CASE WHEN action_type = 'impression' THEN 1 ELSE 0 END) > 0 ORDER BY ctr DESC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'CTR is clicks divided by impressions times 100. I need to count each action type separately using CASE statements, then do the division.'",
+        "detailsToCheck": "Clarify: What if an app has zero impressions? Should we return NULL, 0, or filter it out? (Division by zero handling)",
+        "metaProductContext": "CTR is THE core ad effectiveness metric at Meta. Every advertiser dashboard shows this. Low CTR means poor ad relevance, which hurts both user experience and advertiser ROI.",
+        "avoidGeneric": "Don't just calculate CTR. Mention counter-metrics: you'd also want to track ad fatigue (impressions per user) to ensure you're not annoying users with too many ads.",
+        "followUpQuestion": "Interviewer may ask: 'CTR dropped 10% this week. What would you investigate?' (Check by ad type, audience segment, placement, time of day, creative changes)"
+      },
+      "solution_sql": "SELECT app_id, ROUND(100.0 * SUM(CASE WHEN action_type = 'click' THEN 1 ELSE 0 END) / SUM(CASE WHEN action_type = 'impression' THEN 1 ELSE 0 END), 2) AS ctr FROM actions WHERE YEAR(action_date) = 2024 GROUP BY app_id HAVING SUM(CASE WHEN action_type = 'impression' THEN 1 ELSE 0 END) > 0 ORDER BY ctr DESC",
+      "tests": [
+        {
+          "name": "returns_4_apps",
+          "assert": "ROWCOUNT",
+          "expected": 4
+        },
+        {
+          "name": "ctr_values_valid",
+          "assert": "SQL",
+          "sql": "SELECT MIN(ctr) >= 0 AND MAX(ctr) <= 100 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_correct_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('app_id', 'ctr')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["case statement", "aggregation", "metrics", "division"],
+      "difficulty": "medium",
+      "section": "metrics",
+      "tables": ["actions"],
+      "estimatedMinutes": 10,
+      "beforeYouCode": [
+        "How is CTR calculated (formula)?",
+        "What happens if an app has zero impressions?",
+        "How many decimal places for rounding?"
+      ],
+      "conceptExplanation": {
+        "skill": "Conditional Counting",
+        "explanation": "CASE WHEN inside SUM() or COUNT() lets you count different things in one pass. For ratios, count numerator and denominator separately, then divide.",
+        "keyInsight": "CASE WHEN is your counting filter - count what matches your condition.",
+        "relatedSkills": ["Ratio & Percentage Metrics"]
+      }
+    },
+    {
+      "id": "q4_pages_no_likes",
+      "title": "Pages With No Likes",
+      "prompt": "Find Facebook pages that have received zero likes. A page has no likes if it doesn't appear in the page_likes table.\n\nReturn: page_id\n\nOrder by page_id ascending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You need to find pages in the 'pages' table that do NOT appear in the 'page_likes' table. Think about anti-join patterns.",
+        "tier2": "Use LEFT JOIN and filter for NULL, or use NOT EXISTS, or use NOT IN with a subquery. All three approaches work.",
+        "tier3": "SELECT p.page_id FROM pages p LEFT JOIN page_likes pl ON p.page_id = pl.page_id WHERE pl.page_id IS NULL ORDER BY p.page_id"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'This is an anti-join problem - I need pages that don't have any matching records in page_likes. I'll use LEFT JOIN and filter where the join key is NULL.'",
+        "detailsToCheck": "Verify column names: is it 'page_id' in both tables? Are there any NULL page_ids that might cause issues?",
+        "metaProductContext": "Identifying pages with zero engagement helps the growth team target page owners for onboarding. These pages might need 'boost your first post' prompts.",
+        "avoidGeneric": "Discuss tradeoffs between LEFT JOIN + NULL vs NOT EXISTS vs NOT IN. NOT IN has NULL-handling gotchas. LEFT JOIN is most readable. NOT EXISTS can be faster on large tables.",
+        "followUpQuestion": "Interviewer may ask: 'How would you prioritize outreach to these page owners?' (Segment by page age, category, owner activity level)"
+      },
+      "solution_sql": "SELECT p.page_id FROM pages p LEFT JOIN page_likes pl ON p.page_id = pl.page_id WHERE pl.page_id IS NULL ORDER BY p.page_id",
+      "tests": [
+        {
+          "name": "returns_3_pages",
+          "assert": "ROWCOUNT",
+          "expected": 3
+        },
+        {
+          "name": "no_likes_for_returned_pages",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r JOIN page_likes pl ON r.page_id = pl.page_id",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["left join", "anti-join", "null filtering"],
+      "difficulty": "easy",
+      "section": "advanced",
+      "tables": ["pages", "page_likes"],
+      "estimatedMinutes": 6,
+      "beforeYouCode": [
+        "What's an anti-join pattern?",
+        "Which table has the complete list of pages?",
+        "How do you check for no match in a LEFT JOIN?"
+      ],
+      "conceptExplanation": {
+        "skill": "Anti-Join Pattern",
+        "explanation": "To find 'things with NO match', use LEFT JOIN + WHERE IS NULL. This returns only rows from the left table that have no corresponding rows in the right table.",
+        "keyInsight": "LEFT JOIN + NULL = the anti-join pattern for 'what's missing?'",
+        "relatedSkills": ["NULL Handling"]
+      }
+    },
+    {
+      "id": "q5_friend_recommendations",
+      "title": "Friend Recommendations",
+      "prompt": "Recommend friends for users based on shared interests in private events. Two users should be recommended to each other if:\n\n1. They are BOTH interested in at least 2 of the same PRIVATE events (is_private = true)\n2. They are NOT already friends\n\nReturn: user1_id, user2_id, shared_events_count\nwhere user1_id < user2_id (to avoid duplicate pairs)\n\nOrder by shared_events_count DESC, then user1_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "You need a self-join on event_attendance to find users attending the same events. Filter for private events using the events table. Exclude existing friendships.",
+        "tier2": "Join event_attendance with itself (ea1 and ea2) on event_id where ea1.user_id < ea2.user_id. Join with events to filter is_private = true. Use NOT EXISTS to exclude existing friends.",
+        "tier3": "WITH shared AS (SELECT ea1.user_id AS user1_id, ea2.user_id AS user2_id, COUNT(DISTINCT ea1.event_id) AS shared_events_count FROM event_attendance ea1 JOIN event_attendance ea2 ON ea1.event_id = ea2.event_id AND ea1.user_id < ea2.user_id JOIN events e ON ea1.event_id = e.event_id WHERE e.is_private = true GROUP BY ea1.user_id, ea2.user_id HAVING COUNT(DISTINCT ea1.event_id) >= 2) SELECT * FROM shared s WHERE NOT EXISTS (SELECT 1 FROM friendships f WHERE (f.user1_id = s.user1_id AND f.user2_id = s.user2_id) OR (f.user1_id = s.user2_id AND f.user2_id = s.user1_id)) ORDER BY shared_events_count DESC, user1_id ASC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'This is a friend recommendation problem. I need to find user pairs who share private events but aren't already friends. I'll use a self-join on event_attendance with user1 < user2 to avoid duplicates.'",
+        "detailsToCheck": "Verify: How is friendship stored? Is (A,B) stored as both (A,B) and (B,A), or just once with user1 < user2? Check the is_private column type.",
+        "metaProductContext": "This powers 'People You May Know' - one of Facebook's key growth features. Friend recommendations drive new connections which increases engagement and time on platform.",
+        "avoidGeneric": "Don't stop at the query. Mention you'd want to rank recommendations by shared_event_count, mutual_friends, and recency. Also consider privacy: some event types might be sensitive.",
+        "followUpQuestion": "Interviewer may ask: 'How would you A/B test a new recommendation algorithm?' (Define success metric, choose randomization unit, determine sample size)"
+      },
+      "solution_sql": "WITH shared AS (SELECT ea1.user_id AS user1_id, ea2.user_id AS user2_id, COUNT(DISTINCT ea1.event_id) AS shared_events_count FROM event_attendance ea1 JOIN event_attendance ea2 ON ea1.event_id = ea2.event_id AND ea1.user_id < ea2.user_id JOIN events e ON ea1.event_id = e.event_id WHERE e.is_private = true GROUP BY ea1.user_id, ea2.user_id HAVING COUNT(DISTINCT ea1.event_id) >= 2) SELECT * FROM shared s WHERE NOT EXISTS (SELECT 1 FROM friendships f WHERE (f.user1_id = s.user1_id AND f.user2_id = s.user2_id) OR (f.user1_id = s.user2_id AND f.user2_id = s.user1_id)) ORDER BY shared_events_count DESC, user1_id ASC",
+      "tests": [
+        {
+          "name": "returns_expected_rows",
+          "assert": "ROWCOUNT",
+          "expected": 3
+        },
+        {
+          "name": "no_existing_friendships",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r JOIN friendships f ON (r.user1_id = f.user1_id AND r.user2_id = f.user2_id) OR (r.user1_id = f.user2_id AND r.user2_id = f.user1_id)",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "user1_less_than_user2",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE user1_id >= user2_id",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 3000, "row_limit": 1000 },
+      "tags": ["self-join", "CTE", "recommendation", "not exists"],
+      "difficulty": "hard",
+      "section": "advanced",
+      "tables": ["events", "event_attendance", "friendships"],
+      "estimatedMinutes": 15,
+      "beforeYouCode": [
+        "What makes an event 'private' in the schema?",
+        "How is friendship stored - both directions or one?",
+        "Why do we need user1_id < user2_id?"
+      ],
+      "conceptExplanation": {
+        "skill": "Self-Join + Anti-Join",
+        "explanation": "When comparing rows within the same table (like finding user pairs), join the table to itself. Add anti-join to exclude existing relationships.",
+        "keyInsight": "Self-join creates pairs; NOT EXISTS removes unwanted pairs.",
+        "relatedSkills": ["CTEs for Query Organization", "Multi-Table Joins"]
+      }
+    },
+    {
+      "id": "q6_weekly_churn_rate",
+      "title": "Weekly Churn Rate",
+      "prompt": "Calculate the churn rate by signup week for users who signed up in June 2024. A user is considered 'churned' if their last_login_date is within 28 days of their signup_date.\n\nReturn: signup_week, total_signups, churned_users, churn_rate (as percentage, rounded to 2 decimal places)\n\nOrder by signup_week ascending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Group by signup_week. For each group, count total users and count users where last_login_date - signup_date <= 28 days.",
+        "tier2": "Use CASE WHEN to identify churned users: CASE WHEN DATEDIFF('day', signup_date, last_login_date) <= 28 THEN 1 ELSE 0 END. Calculate churn_rate as churned/total * 100.",
+        "tier3": "SELECT signup_week, COUNT(*) AS total_signups, SUM(CASE WHEN DATEDIFF('day', signup_date, last_login_date) <= 28 THEN 1 ELSE 0 END) AS churned_users, ROUND(100.0 * SUM(CASE WHEN DATEDIFF('day', signup_date, last_login_date) <= 28 THEN 1 ELSE 0 END) / COUNT(*), 2) AS churn_rate FROM signups GROUP BY signup_week ORDER BY signup_week"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need to calculate churn by week. First I'll define churned as last_login within 28 days of signup. Then I'll group by week and calculate the percentage.'",
+        "detailsToCheck": "Clarify the churn definition: Is it 'last login within 28 days' or 'no login after 28 days'? These are opposite! Also clarify: calendar week or week number from signup?",
+        "metaProductContext": "Churn by cohort is how Meta tracks new user quality. High churn in early weeks means the onboarding experience needs improvement. This drives product decisions for new user flows.",
+        "avoidGeneric": "Don't just calculate churn. Discuss that you'd want to segment by source (organic vs paid), device, country to find where churn is highest.",
+        "followUpQuestion": "Interviewer may ask: 'Week 3 churn is 50% vs 20% in other weeks. What happened?' (Check for product changes, marketing campaigns, seasonal effects)"
+      },
+      "solution_sql": "SELECT signup_week, COUNT(*) AS total_signups, SUM(CASE WHEN DATEDIFF('day', signup_date, last_login_date) <= 28 THEN 1 ELSE 0 END) AS churned_users, ROUND(100.0 * SUM(CASE WHEN DATEDIFF('day', signup_date, last_login_date) <= 28 THEN 1 ELSE 0 END) / COUNT(*), 2) AS churn_rate FROM signups GROUP BY signup_week ORDER BY signup_week",
+      "tests": [
+        {
+          "name": "returns_4_weeks",
+          "assert": "ROWCOUNT",
+          "expected": 4
+        },
+        {
+          "name": "churn_rate_valid",
+          "assert": "SQL",
+          "sql": "SELECT MIN(churn_rate) >= 0 AND MAX(churn_rate) <= 100 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('signup_week', 'total_signups', 'churned_users', 'churn_rate')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["churn", "case statement", "date functions", "metrics"],
+      "difficulty": "hard",
+      "section": "retention",
+      "tables": ["signups"],
+      "estimatedMinutes": 12,
+      "beforeYouCode": [
+        "What's the exact churn definition given?",
+        "What time period are we analyzing?",
+        "How do we group users by signup week?"
+      ],
+      "conceptExplanation": {
+        "skill": "Rate Calculation",
+        "explanation": "Rates (churn, conversion, retention) follow the same pattern: define the event, count occurrences, divide by the base, multiply by 100. Use CASE WHEN for event definition.",
+        "keyInsight": "All rates = (count of events / count of base) x 100",
+        "relatedSkills": ["Conditional Counting", "Date Range Calculations"]
+      }
+    },
+    {
+      "id": "q7_video_call_percentage",
+      "title": "Messenger Video Call Percentage",
+      "prompt": "What percentage of users who were active on Messenger yesterday (2024-11-29) made a video call yesterday?\n\nA user is 'active on Messenger' if they have a record in messenger_activity for that date.\nA user 'made a video call' if they appear as caller_id in the calls table with call_type = 'video' on that date.\n\nReturn: active_users, video_callers, video_call_percentage (rounded to 2 decimal places)",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "First find distinct users active on Messenger yesterday. Then find which of those made a video call. Calculate the percentage.",
+        "tier2": "Use CTEs to organize: one for active users, one for video callers. Then calculate percentage as video_callers / active_users * 100.",
+        "tier3": "WITH active AS (SELECT DISTINCT user_id FROM messenger_activity WHERE activity_date = '2024-11-29'), video AS (SELECT DISTINCT caller_id FROM calls WHERE call_date = '2024-11-29' AND call_type = 'video') SELECT (SELECT COUNT(*) FROM active) AS active_users, (SELECT COUNT(*) FROM active a WHERE EXISTS (SELECT 1 FROM video v WHERE v.caller_id = a.user_id)) AS video_callers, ROUND(100.0 * (SELECT COUNT(*) FROM active a WHERE EXISTS (SELECT 1 FROM video v WHERE v.caller_id = a.user_id)) / (SELECT COUNT(*) FROM active), 2) AS video_call_percentage"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I'll use CTEs to break this down: first find active Messenger users, then find video callers among them, then calculate the percentage.'",
+        "detailsToCheck": "Clarify: Does 'active' mean any activity, or specific types? For video calls, do we count callers only or both caller and callee?",
+        "metaProductContext": "Video call adoption is a key Messenger metric. Higher video call % means deeper engagement. This drives product decisions for video call features and prompts.",
+        "avoidGeneric": "Don't just provide the percentage. Discuss how you'd trend this over time and segment by user tenure, device, relationship (family vs friends).",
+        "followUpQuestion": "Interviewer may ask: 'Video call % is 30%. Is that good? How would you increase it?' (Compare to benchmarks, identify blockers, propose experiments)"
+      },
+      "solution_sql": "WITH active AS (SELECT DISTINCT user_id FROM messenger_activity WHERE activity_date = '2024-11-29'), video AS (SELECT DISTINCT caller_id FROM calls WHERE call_date = '2024-11-29' AND call_type = 'video') SELECT (SELECT COUNT(*) FROM active) AS active_users, (SELECT COUNT(*) FROM active a WHERE EXISTS (SELECT 1 FROM video v WHERE v.caller_id = a.user_id)) AS video_callers, ROUND(100.0 * (SELECT COUNT(*) FROM active a WHERE EXISTS (SELECT 1 FROM video v WHERE v.caller_id = a.user_id)) / (SELECT COUNT(*) FROM active), 2) AS video_call_percentage",
+      "tests": [
+        {
+          "name": "returns_1_row",
+          "assert": "ROWCOUNT",
+          "expected": 1
+        },
+        {
+          "name": "percentage_valid",
+          "assert": "SQL",
+          "sql": "SELECT video_call_percentage >= 0 AND video_call_percentage <= 100 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('active_users', 'video_callers', 'video_call_percentage')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["CTE", "percentage", "exists", "metrics"],
+      "difficulty": "medium",
+      "section": "metrics",
+      "tables": ["messenger_activity", "calls"],
+      "estimatedMinutes": 10,
+      "beforeYouCode": [
+        "What specific date are we analyzing?",
+        "What defines 'active on Messenger'?",
+        "How do we identify a video call in the data?"
+      ],
+      "conceptExplanation": {
+        "skill": "Percentage with CTEs",
+        "explanation": "Break complex percentages into steps using CTEs: (1) define the population, (2) define the subset, (3) calculate percentage. This makes the logic readable and debuggable.",
+        "keyInsight": "CTEs let you solve one piece at a time, then combine.",
+        "relatedSkills": ["Set Operations & Existence"]
+      }
+    },
+    {
+      "id": "q8_users_3plus_calls",
+      "title": "Users With 3+ Distinct Calls",
+      "prompt": "Find users who called 3 or more DISTINCT people in the last 7 days (2024-11-24 to 2024-11-30).\n\nReturn: caller_id, distinct_callees\n\nOrder by distinct_callees DESC, caller_id ASC.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "Group by caller_id and count distinct callee_ids. Filter for those with 3+ distinct callees using HAVING.",
+        "tier2": "Use COUNT(DISTINCT callee_id) to count unique people called. Filter the date range with BETWEEN or >= and <=.",
+        "tier3": "SELECT caller_id, COUNT(DISTINCT callee_id) AS distinct_callees FROM calls WHERE call_date BETWEEN '2024-11-24' AND '2024-11-30' GROUP BY caller_id HAVING COUNT(DISTINCT callee_id) >= 3 ORDER BY distinct_callees DESC, caller_id ASC"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need to count distinct callees per caller for the last 7 days. I'll group by caller_id, use COUNT DISTINCT, and filter with HAVING.'",
+        "detailsToCheck": "Clarify: Is 'last 7 days' inclusive of today? Are we counting all call types or specific ones?",
+        "metaProductContext": "Users with high call counts are power users and social connectors. Identifying them helps target features like group calls or broadcast messages.",
+        "avoidGeneric": "Mention that you'd also want to look at call quality metrics for these power users to ensure their experience is good.",
+        "followUpQuestion": "Interviewer may ask: 'How would you use this data to improve the calling experience?' (Feature targeting, quality monitoring, network effects)"
+      },
+      "solution_sql": "SELECT caller_id, COUNT(DISTINCT callee_id) AS distinct_callees FROM calls WHERE call_date BETWEEN '2024-11-24' AND '2024-11-30' GROUP BY caller_id HAVING COUNT(DISTINCT callee_id) >= 3 ORDER BY distinct_callees DESC, caller_id ASC",
+      "tests": [
+        {
+          "name": "returns_5_users",
+          "assert": "ROWCOUNT",
+          "expected": 5
+        },
+        {
+          "name": "all_have_3plus_callees",
+          "assert": "SQL",
+          "sql": "SELECT MIN(distinct_callees) >= 3 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('caller_id', 'distinct_callees')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["group by", "having", "count distinct", "date filtering"],
+      "difficulty": "medium",
+      "section": "engagement",
+      "tables": ["calls"],
+      "estimatedMinutes": 8,
+      "beforeYouCode": [
+        "What's the exact date range for 'last 7 days'?",
+        "Why do we need COUNT DISTINCT vs COUNT?",
+        "How do we filter to only users with 3+ callees?"
+      ],
+      "conceptExplanation": {
+        "skill": "COUNT DISTINCT + HAVING",
+        "explanation": "COUNT DISTINCT counts unique values. Combined with GROUP BY and HAVING, you can filter for groups with enough unique items (like 'called 3+ different people').",
+        "keyInsight": "COUNT DISTINCT answers 'how many unique?' - use HAVING to filter on it.",
+        "relatedSkills": ["Aggregation with Filtering"]
+      }
+    },
+    {
+      "id": "q9_comment_histogram",
+      "title": "Comment Histogram",
+      "prompt": "Create a histogram showing the distribution of users by their comment count.\n\nBuckets:\n- '0': Users with 0 comments\n- '1-2': Users with 1-2 comments\n- '3-5': Users with 3-5 comments\n- '6-10': Users with 6-10 comments\n- '10+': Users with more than 10 comments\n\nReturn: comment_bucket, user_count\n\nOrder by the buckets in the order listed above.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "First calculate comment count per user (including 0 for users with no comments). Then use CASE WHEN to assign buckets. Finally count users per bucket.",
+        "tier2": "Use a LEFT JOIN from users to comments to include users with 0 comments. Use CASE WHEN to create buckets, then GROUP BY bucket.",
+        "tier3": "WITH user_counts AS (SELECT u.user_id, COUNT(c.comment_id) AS comment_count FROM users u LEFT JOIN comments c ON u.user_id = c.user_id GROUP BY u.user_id), bucketed AS (SELECT user_id, CASE WHEN comment_count = 0 THEN '0' WHEN comment_count <= 2 THEN '1-2' WHEN comment_count <= 5 THEN '3-5' WHEN comment_count <= 10 THEN '6-10' ELSE '10+' END AS comment_bucket FROM user_counts) SELECT comment_bucket, COUNT(*) AS user_count FROM bucketed GROUP BY comment_bucket ORDER BY CASE comment_bucket WHEN '0' THEN 1 WHEN '1-2' THEN 2 WHEN '3-5' THEN 3 WHEN '6-10' THEN 4 ELSE 5 END"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'I need a histogram, so first I'll count comments per user including zeros, then bucket them, then count per bucket. I'll use CTEs to organize this.'",
+        "detailsToCheck": "Clarify: Should I include all users or only those who have ever been active? How should the buckets be ordered in the output?",
+        "metaProductContext": "Comment distribution shows engagement depth. A healthy platform has most users in the middle buckets. Too many at 0 means low engagement; too many at 10+ might indicate spam.",
+        "avoidGeneric": "Discuss what the histogram tells you about user engagement health. Mention you'd want to track this over time to see if distribution is improving.",
+        "followUpQuestion": "Interviewer may ask: 'The 0-comment bucket is growing. What would you investigate?' (New user onboarding, content quality, notification effectiveness)"
+      },
+      "solution_sql": "WITH user_counts AS (SELECT u.user_id, COUNT(c.comment_id) AS comment_count FROM users u LEFT JOIN comments c ON u.user_id = c.user_id GROUP BY u.user_id), bucketed AS (SELECT user_id, CASE WHEN comment_count = 0 THEN '0' WHEN comment_count <= 2 THEN '1-2' WHEN comment_count <= 5 THEN '3-5' WHEN comment_count <= 10 THEN '6-10' ELSE '10+' END AS comment_bucket FROM user_counts) SELECT comment_bucket, COUNT(*) AS user_count FROM bucketed GROUP BY comment_bucket ORDER BY CASE comment_bucket WHEN '0' THEN 1 WHEN '1-2' THEN 2 WHEN '3-5' THEN 3 WHEN '6-10' THEN 4 ELSE 5 END",
+      "tests": [
+        {
+          "name": "returns_5_buckets",
+          "assert": "ROWCOUNT",
+          "expected": 5
+        },
+        {
+          "name": "total_users_match",
+          "assert": "SQL",
+          "sql": "SELECT SUM(user_count) = (SELECT COUNT(*) FROM users) AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('comment_bucket', 'user_count')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 2000, "row_limit": 1000 },
+      "tags": ["histogram", "case statement", "left join", "CTE"],
+      "difficulty": "medium",
+      "section": "engagement",
+      "tables": ["users", "comments"],
+      "estimatedMinutes": 12,
+      "beforeYouCode": [
+        "How do we include users with 0 comments?",
+        "What are the exact bucket ranges?",
+        "How should the buckets be ordered in output?"
+      ],
+      "conceptExplanation": {
+        "skill": "Histogram Pattern",
+        "explanation": "Histograms require: (1) aggregate per entity, (2) bucket using CASE WHEN, (3) count per bucket. LEFT JOIN ensures you include entities with zero counts.",
+        "keyInsight": "Histograms = aggregate -> bucket -> count. LEFT JOIN includes zeros.",
+        "relatedSkills": ["Conditional Counting", "NULL Handling"]
+      }
+    },
+    {
+      "id": "q10_rolling_7day_active",
+      "title": "Rolling 7-Day Active Users",
+      "prompt": "Calculate the rolling 7-day active user count for each day in November 2024. For each day, count the distinct users who had any action in the 7-day window ending on that day (inclusive).\n\nReturn: activity_date, rolling_7day_users\n\nOrder by activity_date ascending.",
+      "dialect": "duckdb",
+      "hints": {
+        "tier1": "For each date, you need to count distinct users from that date and the 6 preceding days. This is a classic window function problem.",
+        "tier2": "Get daily active users first, then use a window function with ROWS BETWEEN 6 PRECEDING AND CURRENT ROW, but remember you need DISTINCT users across the window, not sum.",
+        "tier3": "WITH daily_users AS (SELECT DISTINCT action_date, user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 11) SELECT d.activity_date, (SELECT COUNT(DISTINCT user_id) FROM daily_users WHERE action_date BETWEEN d.activity_date - INTERVAL 6 DAY AND d.activity_date) AS rolling_7day_users FROM (SELECT DISTINCT action_date AS activity_date FROM daily_users) d ORDER BY d.activity_date"
+      },
+      "interviewTips": {
+        "thinkOutLoud": "Say: 'Rolling 7-day users means for each day, I count distinct users in the past 7 days. Window functions with SUM wouldn't work because I need DISTINCT across the window.'",
+        "detailsToCheck": "Clarify: Is '7-day window' inclusive of today (7 days total) or exclusive (today + 6 prior)? Are we looking at calendar days or days with activity?",
+        "metaProductContext": "L7 (logged in last 7 days) is a core Meta metric alongside DAU and MAU. It smooths out daily fluctuations and shows weekly engagement patterns.",
+        "avoidGeneric": "Discuss why rolling metrics are preferred over simple daily counts - they reduce noise and show trends more clearly. Also mention the tradeoff of lagging indicators.",
+        "followUpQuestion": "Interviewer may ask: 'L7 is flat but DAU is increasing. What does that mean?' (Same users coming back more frequently, not growing the base)"
+      },
+      "solution_sql": "WITH daily_users AS (SELECT DISTINCT action_date, user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 11) SELECT d.activity_date, (SELECT COUNT(DISTINCT user_id) FROM daily_users WHERE action_date BETWEEN d.activity_date - INTERVAL 6 DAY AND d.activity_date) AS rolling_7day_users FROM (SELECT DISTINCT action_date AS activity_date FROM daily_users) d ORDER BY d.activity_date",
+      "tests": [
+        {
+          "name": "returns_30_days",
+          "assert": "ROWCOUNT",
+          "expected": 30
+        },
+        {
+          "name": "rolling_counts_positive",
+          "assert": "SQL",
+          "sql": "SELECT MIN(rolling_7day_users) > 0 AS ok FROM ({{USER_SQL}})",
+          "expected": [{"ok": true}]
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('activity_date', 'rolling_7day_users')",
+          "expected": [{"ok": true}]
+        }
+      ],
+      "limits": { "timeout_ms": 3000, "row_limit": 1000 },
+      "tags": ["window functions", "rolling", "distinct", "CTE"],
+      "difficulty": "hard",
+      "section": "advanced",
+      "tables": ["actions"],
+      "estimatedMinutes": 15,
+      "beforeYouCode": [
+        "What does 'rolling 7-day' mean exactly?",
+        "Which month are we analyzing?",
+        "Why can't we use a simple window SUM for distinct users?"
+      ],
+      "conceptExplanation": {
+        "skill": "Rolling Window (Distinct)",
+        "explanation": "Rolling metrics count distinct items across a sliding window. Standard window functions can't do DISTINCT across frames, so use a correlated subquery or date range filter.",
+        "keyInsight": "Rolling distinct = for each date, query the window with BETWEEN.",
+        "relatedSkills": ["Window Functions", "CTEs for Query Organization"]
+      }
+    }
+  ]
+}

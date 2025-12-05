@@ -8,6 +8,7 @@ import { ChallengeCardSkeleton } from "@/app/components/ChallengeCardSkeleton";
 import { ProgressBadge } from "@/app/components/ProgressBadge";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
 import { Icon } from "@/app/components/Icon";
+import SkillsChecklist from "@/app/components/SkillsChecklist";
 import { loadPack } from "@/app/lib/pack";
 import { getAllProgress, getPackCompletionPercentage } from "@/app/lib/progress";
 import type { PackSchema } from "@/app/lib/types";
@@ -551,6 +552,14 @@ export default function PackPage() {
             </div>
           )}
         </div>
+
+        {/* Skills Mastery Checklist - Only for packs with conceptExplanation */}
+        {pack.challenges.some(c => c.conceptExplanation) && (
+          <SkillsChecklist
+            challenges={pack.challenges}
+            completedChallengeIds={completedChallenges}
+          />
+        )}
 
         {/* Challenges by Section */}
         <div className="space-y-8">

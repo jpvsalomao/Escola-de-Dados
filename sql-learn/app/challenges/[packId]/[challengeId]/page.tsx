@@ -6,9 +6,9 @@ import Link from "next/link";
 import { Editor } from "@/app/components/Editor";
 import { ResultGrid } from "@/app/components/ResultGrid";
 import { Breadcrumb } from "@/app/components/Breadcrumb";
-import { KeyboardShortcuts } from "@/app/components/KeyboardShortcuts";
 import { Confetti } from "@/app/components/Confetti";
 import { AnimatedNumber } from "@/app/components/AnimatedNumber";
+import { ChallengeTabs } from "@/app/components/ChallengeTabs";
 import { useTranslation } from "@/app/lib/useTranslation";
 import { loadPack, loadPackDatasets } from "@/app/lib/pack";
 import { gradeQuery } from "@/app/lib/grader";
@@ -365,6 +365,17 @@ export default function ChallengePage() {
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${difficultyColors[challenge.difficulty]}`}>
                     {challenge.difficulty}
                   </span>
+                  {challenge.estimatedMinutes && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ~{challenge.estimatedMinutes} min
+                      </span>
+                    </>
+                  )}
                   {progress && (
                     <>
                       <span>•</span>
@@ -388,251 +399,24 @@ export default function ChallengePage() {
         />
 
         <div className="grid gap-6 lg:grid-cols-5">
-          {/* Left panel - Instructions (2 columns) */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Challenge Description */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h2 className="text-lg font-bold text-gray-900">Challenge</h2>
-              </div>
-              <p className="text-gray-700 leading-relaxed">{challenge.prompt}</p>
-
-              {progress?.completed && progress.bestTime && (
-                <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2 text-sm">
-                  <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-emerald-700 font-medium">
-                    Best time: {progress.bestTime.toFixed(0)}ms
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Available Tables */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-gray-900">{t("challenge.available_tables")}</h3>
-              </div>
-              <div className="space-y-3">
-                {pack.datasets.map((ds) => (
-                  <div key={ds.name} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => toggleTableExpansion(ds.name)}
-                      disabled={!duckdbReady}
-                      className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className={`w-4 h-4 text-indigo-600 transition-transform ${expandedTables.has(ds.name) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                        <span className="font-mono font-medium text-gray-900">{ds.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                        {expandedTables.has(ds.name) && tableSchemas[ds.name] && (
-                          <span>{tableSchemas[ds.name].length} columns</span>
-                        )}
-                      </div>
-                    </button>
-
-                    {expandedTables.has(ds.name) && (
-                      <div className="border-t border-gray-200 bg-gray-50 slide-down">
-                        {tableSchemas[ds.name] ? (
-                          <div className="p-3">
-                            <div className="space-y-2">
-                              {tableSchemas[ds.name].map((column, idx) => (
-                                <div
-                                  key={column.name}
-                                  className="flex items-center justify-between text-sm bg-white rounded px-3 py-2 border border-gray-200 stagger-fade-in"
-                                  style={{ animationDelay: `${idx * 30}ms` }}
-                                >
-                                  <span className="font-mono font-medium text-gray-900">{column.name}</span>
-                                  <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-mono">{column.type}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-3 text-center">
-                            <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
-                            <p className="text-xs text-gray-500 mt-2">Loading schema...</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Keyboard Shortcuts */}
-            <KeyboardShortcuts />
-
-            {/* Progressive Hints */}
-            {(challenge.hints || challenge.hint) && (
-              <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 text-teal-600 font-semibold mb-4">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                  <span>{t("challenge.hints_title")}</span>
-                </div>
-
-                {/* Progressive hint buttons and content */}
-                {challenge.hints ? (
-                  <div className="space-y-3">
-                    {/* Tier 1: Gentle Nudge */}
-                    {challenge.hints.tier1 && (
-                      <div>
-                        {hintLevel < 1 ? (
-                          <button
-                            onClick={() => setHintLevel(1)}
-                            className="w-full px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          >
-                            {t("challenge.hint_tier1")}
-                          </button>
-                        ) : (
-                          <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg slide-down">
-                            <div className="flex items-start gap-2">
-                              <span className="text-lg">💡</span>
-                              <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hints.tier1}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Tier 2: More Direction */}
-                    {challenge.hints.tier2 && hintLevel >= 1 && (
-                      <div>
-                        {hintLevel < 2 ? (
-                          <button
-                            onClick={() => setHintLevel(2)}
-                            className="w-full px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
-                          >
-                            {t("challenge.hint_tier2")}
-                          </button>
-                        ) : (
-                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg slide-down">
-                            <div className="flex items-start gap-2">
-                              <span className="text-lg">🎯</span>
-                              <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hints.tier2}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Tier 3: Near-Solution */}
-                    {challenge.hints.tier3 && hintLevel >= 2 && (
-                      <div>
-                        {hintLevel < 3 ? (
-                          <button
-                            onClick={() => setHintLevel(3)}
-                            className="w-full px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          >
-                            {t("challenge.hint_tier3")}
-                          </button>
-                        ) : (
-                          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg slide-down">
-                            <div className="flex items-start gap-2">
-                              <span className="text-lg">🔥</span>
-                              <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hints.tier3}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Reset hints button */}
-                    {hintLevel > 0 && (
-                      <button
-                        onClick={() => setHintLevel(0)}
-                        className="text-xs text-gray-500 hover:text-gray-700 mt-2"
-                      >
-                        {t("challenge.hide_hints")}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  /* Fallback for old single-hint format */
-                  <div>
-                    {hintLevel === 0 ? (
-                      <button
-                        onClick={() => setHintLevel(1)}
-                        className="w-full px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      >
-                        💡 Show Hint
-                      </button>
-                    ) : (
-                      <>
-                        <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg slide-down">
-                          <div className="flex items-start gap-2">
-                            <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="text-gray-700 text-sm leading-relaxed flex-1">{challenge.hint}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setHintLevel(0)}
-                          className="text-xs text-gray-500 hover:text-gray-700 mt-2"
-                        >
-                          Hide hint
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Solution */}
-            <div className="bg-white rounded-2xl border-2 border-amber-200 p-6 shadow-sm">
-              <button
-                onClick={() => setShowSolution(!showSolution)}
-                className="flex items-center gap-2 text-amber-700 hover:text-amber-900 font-semibold w-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 rounded-lg p-1 -m-1"
-                aria-expanded={showSolution}
-                aria-controls="solution-content"
-              >
-                <svg className={`w-5 h-5 transition-transform duration-300 ${showSolution ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  {showSolution ? t("challenge.hide_solution") : t("challenge.view_solution")}
-                </span>
-              </button>
-              {showSolution && (
-                <div id="solution-content" className="mt-4 animate-in fade-in duration-300">
-                  <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                      <p className="text-sm text-amber-900">
-                        💡 <strong>{t("challenge.solution_warning_title")}</strong> {t("challenge.solution_warning")}
-                      </p>
-                    </div>
-                  </div>
-                  <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg text-sm overflow-x-auto font-mono">
-                    {challenge.solution_sql}
-                  </pre>
-                </div>
-              )}
-            </div>
+          {/* Left panel - Tabbed Instructions (2 columns) */}
+          <div className="lg:col-span-2">
+            <ChallengeTabs
+              challenge={challenge}
+              pack={pack}
+              packId={packId}
+              challengeId={challengeId}
+              expandedTables={expandedTables}
+              tableSchemas={tableSchemas}
+              duckdbReady={duckdbReady}
+              onToggleTable={toggleTableExpansion}
+              hintLevel={hintLevel}
+              onSetHintLevel={setHintLevel}
+              showSolution={showSolution}
+              onSetShowSolution={setShowSolution}
+              bestTime={progress?.bestTime}
+              completed={progress?.completed}
+            />
           </div>
 
           {/* Right panel - Editor & Results (3 columns) */}
