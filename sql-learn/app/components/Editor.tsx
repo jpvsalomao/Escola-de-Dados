@@ -8,13 +8,14 @@ interface EditorProps {
   onChange: (value: string) => void;
   className?: string;
   readOnly?: boolean;
+  height?: string;
 }
 
-export function Editor({ value, onChange, className, readOnly = false }: EditorProps) {
+export function Editor({ value, onChange, className, readOnly = false, height = "300px" }: EditorProps) {
   return (
     <div className={cn("border border-gray-300 rounded-lg overflow-hidden", className)}>
       <MonacoEditor
-        height="300px"
+        height={height}
         defaultLanguage="sql"
         value={value}
         onChange={(val) => onChange(val || "")}

@@ -406,6 +406,7 @@ export default function ChallengePage() {
               pack={pack}
               packId={packId}
               challengeId={challengeId}
+              userSql={sql}
               expandedTables={expandedTables}
               tableSchemas={tableSchemas}
               duckdbReady={duckdbReady}
@@ -445,7 +446,12 @@ export default function ChallengePage() {
                 )}
               </div>
 
-              <Editor value={sql} onChange={setSql} className="mb-4" />
+              <Editor
+                value={sql}
+                onChange={setSql}
+                className="mb-4"
+                height={packId === "pack_meta_interview" ? "500px" : "300px"}
+              />
 
               <div className="flex gap-3 flex-wrap">
                 <button

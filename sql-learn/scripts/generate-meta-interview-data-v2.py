@@ -423,59 +423,82 @@ def update_friendships_and_page_likes_for_q13_q16():
     Ensure friendships and page_likes have enough data for:
     - Friend recommendations (friends liked pages user hasn't)
     - Mutual friends counting (pairs with 3+ mutual friends)
+
+    IMPORTANT: Preserves original schema (user1_id, user2_id) for compatibility
+    and keeps pages 8, 9, 10 without likes for q4.
     """
     print("Updating friendships.parquet and page_likes.parquet...")
 
-    # Create a richer friendship graph
+    # Create a richer friendship graph using ORIGINAL schema (user1_id, user2_id)
     friendships = []
+    friendship_id = 1
 
     # Core friend group (users 1-10 are highly connected)
     core_users = list(range(1, 11))
     for i, user1 in enumerate(core_users):
         for user2 in core_users[i+1:]:
             if random.random() < 0.6:  # 60% chance of friendship
-                friendships.append({"user_id": user1, "friend_id": user2})
-                friendships.append({"user_id": user2, "friend_id": user1})
+                friendships.append({
+                    "friendship_id": friendship_id,
+                    "user1_id": min(user1, user2),
+                    "user2_id": max(user1, user2),
+                    "friendship_date": datetime(2023, random.randint(1, 12), random.randint(1, 28)).date()
+                })
+                friendship_id += 1
 
     # Secondary connections (users 11-20)
     for user in range(11, 21):
-        # Each connects to 2-4 core users
         num_friends = random.randint(2, 4)
         friends = random.sample(core_users, num_friends)
         for friend in friends:
-            friendships.append({"user_id": user, "friend_id": friend})
-            friendships.append({"user_id": friend, "friend_id": user})
+            friendships.append({
+                "friendship_id": friendship_id,
+                "user1_id": min(user, friend),
+                "user2_id": max(user, friend),
+                "friendship_date": datetime(2023, random.randint(1, 12), random.randint(1, 28)).date()
+            })
+            friendship_id += 1
 
     # Sparse connections (users 21-30)
     for user in range(21, 31):
         num_friends = random.randint(1, 2)
         friends = random.sample(list(range(1, 21)), num_friends)
         for friend in friends:
-            friendships.append({"user_id": user, "friend_id": friend})
-            friendships.append({"user_id": friend, "friend_id": user})
+            friendships.append({
+                "friendship_id": friendship_id,
+                "user1_id": min(user, friend),
+                "user2_id": max(user, friend),
+                "friendship_date": datetime(2023, random.randint(1, 12), random.randint(1, 28)).date()
+            })
+            friendship_id += 1
 
-    friendships_df = pd.DataFrame(friendships).drop_duplicates()
+    friendships_df = pd.DataFrame(friendships).drop_duplicates(subset=["user1_id", "user2_id"])
     friendships_df.to_parquet(f"{OUTPUT_DIR}/friendships.parquet", index=False)
 
     # Create page likes for recommendations
+    # IMPORTANT: Only pages 1-7 get likes, pages 8-10 stay empty for q4
     page_likes = []
-    pages = list(range(1, 16))  # 15 pages
+    like_id = 1
+    pages_with_likes = list(range(1, 8))  # Only pages 1-7
 
-    # Each user likes some pages
-    for user in range(1, 31):
-        num_likes = random.randint(2, 6)
-        liked_pages = random.sample(pages, num_likes)
+    # Each user likes some pages (from pages 1-7 only)
+    for user in range(1, 21):
+        num_likes = random.randint(2, 5)
+        liked_pages = random.sample(pages_with_likes, min(num_likes, len(pages_with_likes)))
         for page in liked_pages:
             page_likes.append({
+                "like_id": like_id,
                 "user_id": user,
                 "page_id": page,
                 "liked_date": datetime(2024, random.randint(1, 11), random.randint(1, 28)).date()
             })
+            like_id += 1
 
     page_likes_df = pd.DataFrame(page_likes).drop_duplicates(subset=["user_id", "page_id"])
     page_likes_df.to_parquet(f"{OUTPUT_DIR}/page_likes.parquet", index=False)
 
     print(f"  Created {len(friendships_df)} friendship pairs, {len(page_likes_df)} page likes")
+    print(f"  Pages 8, 9, 10 have NO likes (preserved for q4)")
     return friendships_df, page_likes_df
 
 

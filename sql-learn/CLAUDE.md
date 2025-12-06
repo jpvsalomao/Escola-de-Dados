@@ -29,6 +29,7 @@ npm run format:check # Check formatting
 
 # Testing
 npm test             # Run unit tests (Vitest)
+npm test -- grader   # Run single test file (by name match)
 npm run test:e2e     # Run E2E tests (Playwright)
 npm run test:e2e -- --headed  # Run E2E tests with browser UI
 npm run test:e2e -- --debug   # Run E2E tests in debug mode
@@ -53,6 +54,7 @@ node scripts/test-challenges.js pack_basics          # Test a pack's challenges
    - `grader.ts` - Challenge grading with multiple assertion types
    - `progress.ts` - localStorage-based progress tracking
    - `duck.ts` - DuckDB wrapper (data access layer)
+   - `cheatsheet-data.ts` - Skill categories and SQL pattern definitions for interview prep
 
 3. **Data Layer**
    - DuckDB-WASM running in Web Worker
@@ -123,14 +125,14 @@ Challenges are automatically grouped by tags in the pack page (`app/packs/[packI
 1. Create directory: `public/packs/<pack_id>/`
 2. Add `pack.json` with schema v1.1 or v1.2 structure
 3. Add `.parquet` dataset files
-4. Register pack in `app/lib/pack.ts`:
+4. Register pack in `app/lib/pack.ts` in the `getAvailablePacks()` function:
    ```typescript
-   export async function getAvailablePacks() {
-     return [
-       { id: "pack_basics", path: "/packs/pack_basics" },
-       { id: "your_pack", path: "/packs/your_pack" },  // Add here
-     ];
-   }
+   return [
+     { id: "pack_basics", path: "/packs/pack_basics" },
+     { id: "pack_intermediate", path: "/packs/pack_intermediate" },
+     { id: "pack_meta_interview", path: "/packs/pack_meta_interview" },
+     { id: "your_pack", path: "/packs/your_pack" },  // Add here
+   ];
    ```
 
 ### Creating Parquet Files
@@ -183,6 +185,7 @@ These headers are ESSENTIAL for DuckDB-WASM to function. Do not remove them.
 - `Editor.tsx` - Monaco-based SQL editor (lazy loaded to reduce bundle size)
 - `ResultGrid.tsx` - Query results table
 - `ChallengeCard.tsx` / `PackCard.tsx` - Card components with skeletons
+- `InterviewCheatsheet.tsx` - Tabbed cheatsheet with SQL patterns organized by skill category
 
 ### Page Structure
 

@@ -7,14 +7,18 @@ import ConceptExplanation from "./ConceptExplanation";
 import InterviewTips from "./InterviewTips";
 import { KeyboardShortcuts } from "./KeyboardShortcuts";
 import { CopyButton } from "./concepts/CopyButton";
+import { getNotes, saveNotes, saveNotesSync } from "@/app/lib/notes";
+import { AnswerReview } from "./AnswerReview";
 
-type TabId = "challenge" | "strategy" | "help";
+type TabId = "challenge" | "strategy" | "help" | "notes";
 
 interface ChallengeTabsProps {
   challenge: Challenge;
   pack: PackSchema;
   packId: string;
   challengeId: string;
+  // User's current SQL (for AI review)
+  userSql: string;
   // Table expansion state (managed by parent)
   expandedTables: Set<string>;
   tableSchemas: Record<string, Array<{ name: string; type: string }>>;
@@ -36,6 +40,7 @@ export function ChallengeTabs({
   pack,
   packId,
   challengeId,
+  userSql,
   expandedTables,
   tableSchemas,
   duckdbReady,
@@ -49,14 +54,16 @@ export function ChallengeTabs({
 }: ChallengeTabsProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>("challenge");
+  const [notes, setNotes] = useState("");
+  const [hasNotes, setHasNotes] = useState(false);
 
   // Determine if Strategy tab should be visible
   const hasStrategyContent = !!(challenge.conceptExplanation || challenge.interviewTips);
 
-  // Load persisted tab from localStorage
+  // Load persisted tab and notes from localStorage
   useEffect(() => {
     const savedTab = localStorage.getItem(`activeTab_${packId}_${challengeId}`);
-    if (savedTab && ["challenge", "strategy", "help"].includes(savedTab)) {
+    if (savedTab && ["challenge", "strategy", "help", "notes"].includes(savedTab)) {
       // Only restore strategy if content exists
       if (savedTab === "strategy" && !hasStrategyContent) {
         setActiveTab("challenge");
@@ -66,7 +73,26 @@ export function ChallengeTabs({
     } else {
       setActiveTab("challenge");
     }
+
+    // Load notes
+    const savedNotes = getNotes(packId, challengeId);
+    if (savedNotes) {
+      setNotes(savedNotes.content);
+      setHasNotes(savedNotes.content.trim().length > 0);
+    }
   }, [packId, challengeId, hasStrategyContent]);
+
+  // Handle notes change with debounced save
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    setHasNotes(value.trim().length > 0);
+    saveNotes(packId, challengeId, value);
+  };
+
+  // Save notes immediately on blur
+  const handleNotesBlur = () => {
+    saveNotesSync(packId, challengeId, notes);
+  };
 
   // Persist tab selection
   const handleTabChange = (tab: TabId) => {
@@ -104,7 +130,6 @@ export function ChallengeTabs({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             }
-            badge={challenge.conceptExplanation?.skill}
           >
             Strategy
           </TabButton>
@@ -121,6 +146,19 @@ export function ChallengeTabs({
           badge={hintLevel > 0 ? `${hintLevel}/3` : undefined}
         >
           Help
+        </TabButton>
+
+        <TabButton
+          active={activeTab === "notes"}
+          onClick={() => handleTabChange("notes")}
+          icon={
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          }
+          badge={hasNotes ? "•" : undefined}
+        >
+          Notes
         </TabButton>
       </div>
 
@@ -155,7 +193,7 @@ export function ChallengeTabs({
 
             {/* Before You Code */}
             {challenge.beforeYouCode && challenge.beforeYouCode.length > 0 && (
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-4">
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-6 bg-amber-100 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -269,7 +307,7 @@ export function ChallengeTabs({
             {/* Progressive Hints */}
             {(challenge.hints || challenge.hint) && (
               <div>
-                <div className="flex items-center gap-2 text-teal-600 font-semibold mb-4">
+                <div className="flex items-center gap-2 text-amber-600 font-semibold mb-4">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
@@ -284,12 +322,12 @@ export function ChallengeTabs({
                         {hintLevel < 1 ? (
                           <button
                             onClick={() => onSetHintLevel(1)}
-                            className="w-full px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg font-medium text-sm transition-colors"
+                            className="w-full px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-medium text-sm transition-colors"
                           >
                             {t("challenge.hint_tier1")}
                           </button>
                         ) : (
-                          <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg slide-down">
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg slide-down">
                             <div className="flex items-start gap-2">
                               <span className="text-lg">💡</span>
                               <p className="text-gray-700 text-sm leading-relaxed flex-1 whitespace-pre-wrap">{challenge.hints.tier1}</p>
@@ -326,12 +364,12 @@ export function ChallengeTabs({
                         {hintLevel < 3 ? (
                           <button
                             onClick={() => onSetHintLevel(3)}
-                            className="w-full px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg font-medium text-sm transition-colors"
+                            className="w-full px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-medium text-sm transition-colors"
                           >
                             {t("challenge.hint_tier3")}
                           </button>
                         ) : (
-                          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg slide-down">
+                          <div className="p-4 bg-amber-100 border border-amber-300 rounded-lg slide-down">
                             <div className="flex items-start gap-2">
                               <span className="text-lg">🔥</span>
                               <p className="text-gray-700 text-sm leading-relaxed flex-1 whitespace-pre-wrap">{challenge.hints.tier3}</p>
@@ -357,15 +395,15 @@ export function ChallengeTabs({
                     {hintLevel === 0 ? (
                       <button
                         onClick={() => onSetHintLevel(1)}
-                        className="w-full px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg font-medium text-sm transition-colors"
+                        className="w-full px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-medium text-sm transition-colors"
                       >
                         💡 Show Hint
                       </button>
                     ) : (
                       <>
-                        <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg slide-down">
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg slide-down">
                           <div className="flex items-start gap-2">
-                            <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p className="text-gray-700 text-sm leading-relaxed flex-1 whitespace-pre-wrap">{challenge.hint}</p>
@@ -425,9 +463,78 @@ export function ChallengeTabs({
               )}
             </div>
 
+            {/* AI Answer Review */}
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">AI Review</h3>
+                  <p className="text-xs text-gray-500">Get feedback on your approach</p>
+                </div>
+              </div>
+              <AnswerReview
+                userSql={userSql}
+                challengePrompt={challenge.prompt}
+                solutionSql={challenge.solution_sql}
+                tables={pack.datasets.map((ds) => ds.name)}
+                hint={challenge.hints?.tier1 || challenge.hint}
+              />
+            </div>
+
             {/* Keyboard Shortcuts */}
             <div className="border-t border-gray-200 pt-6">
               <KeyboardShortcuts />
+            </div>
+          </div>
+        )}
+
+        {/* Notes Tab */}
+        {activeTab === "notes" && (
+          <div className="p-6 tab-content-fade">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Your Notes</h2>
+                <p className="text-xs text-gray-500">Notes are saved automatically</p>
+              </div>
+            </div>
+
+            <textarea
+              value={notes}
+              onChange={(e) => handleNotesChange(e.target.value)}
+              onBlur={handleNotesBlur}
+              placeholder="Write your notes here...
+
+Ideas for this challenge:
+• Key concepts to remember
+• Approach you tried
+• Edge cases to consider
+• Things learned"
+              className="w-full h-64 p-4 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none font-mono"
+            />
+
+            <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+              <span>{notes.length} characters</span>
+              {hasNotes && (
+                <button
+                  onClick={() => {
+                    setNotes("");
+                    setHasNotes(false);
+                    saveNotesSync(packId, challengeId, "");
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Clear notes
+                </button>
+              )}
             </div>
           </div>
         )}

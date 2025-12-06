@@ -7,7 +7,7 @@
 
 | Sprint | Title | Status | Plan |
 |--------|-------|--------|------|
-| 8 | Sprint System Setup & UI Polish | Complete | [docs/sprints/sprint-8/plan.md](sprints/sprint-8/plan.md) |
+| 9 | Challenge Validation & Ordering | Complete | [docs/sprints/sprint-9/plan.md](sprints/sprint-9/plan.md) |
 
 **Quick Context:** See `STATUS.md` at project root for current state.
 
