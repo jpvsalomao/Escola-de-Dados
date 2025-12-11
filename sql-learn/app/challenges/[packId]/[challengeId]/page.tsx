@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from "react";
+import { useEffect, useState, useCallback, useTransition, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Editor } from "@/app/components/Editor";
@@ -39,6 +39,23 @@ export default function ChallengePage() {
   const [duckdbReady, setDuckdbReady] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Refs to avoid recreating callbacks on every state change
+  const sqlRef = useRef(sql);
+  const gradeResultRef = useRef(gradeResult);
+  const resultsRef = useRef(results);
+  const errorRef = useRef(error);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    sqlRef.current = sql;
+  }, [sql]);
+
+  useEffect(() => {
+    gradeResultRef.current = gradeResult;
+    resultsRef.current = results;
+    errorRef.current = error;
+  }, [gradeResult, results, error]);
 
   useEffect(() => {
     async function loadData() {
@@ -85,24 +102,25 @@ export default function ChallengePage() {
     loadData();
   }, [packId, challengeId]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - use ref to avoid recreating on every keystroke
   const handleRunQuery = useCallback(async () => {
-    if (!sql.trim() || running) return;
-    
+    const currentSql = sqlRef.current;
+    if (!currentSql.trim() || running) return;
+
     setRunning(true);
     setError(null);
     setResults([]);
     setGradeResult(null);
 
     try {
-      const data = await executeQuery(sql);
+      const data = await executeQuery(currentSql);
       setResults(data as Record<string, unknown>[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Query execution failed");
     } finally {
       setRunning(false);
     }
-  }, [sql, running]);
+  }, [running]); // sql removed from deps - using sqlRef instead
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -111,9 +129,9 @@ export default function ChallengePage() {
         e.preventDefault();
         handleRunQuery();
       }
-      // Escape to clear results
+      // Escape to clear results - use refs to avoid frequent listener recreation
       if (e.key === "Escape") {
-        if (gradeResult || results.length > 0 || error) {
+        if (gradeResultRef.current || resultsRef.current.length > 0 || errorRef.current) {
           e.preventDefault();
           setResults([]);
           setGradeResult(null);
@@ -124,11 +142,16 @@ export default function ChallengePage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleRunQuery, gradeResult, results, error]);
+  }, [handleRunQuery]); // Minimal deps - using refs for frequently changing values
 
   function handleRun() {
     handleRunQuery();
   }
+
+  // Memoized onChange handler for Editor to prevent unnecessary re-renders
+  const handleSqlChange = useCallback((value: string) => {
+    setSql(value);
+  }, []);
 
   async function handleSubmit() {
     if (!sql.trim() || !challenge) {
@@ -448,60 +471,68 @@ export default function ChallengePage() {
 
               <Editor
                 value={sql}
-                onChange={setSql}
+                onChange={handleSqlChange}
                 className="mb-4"
                 height={packId === "pack_meta_interview" ? "500px" : "300px"}
               />
 
-              <div className="flex gap-3 flex-wrap">
-                <button
-                  onClick={handleRun}
-                  disabled={running}
-                  className="btn-primary flex items-center gap-2"
-                  title="Run Query (Ctrl+Enter)"
-                >
-                  {running ? (
-                    <>
-                      <div className="inline-flex items-center gap-1 loading-dots">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                      </div>
-                      <span>{t("challenge.running")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {t("challenge.run_query")}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={running}
-                  className="btn-success flex items-center gap-2"
-                >
-                  {running ? (
-                    <>
-                      <div className="inline-flex items-center gap-1 loading-dots">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                      </div>
-                      <span>{t("challenge.submitting")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {t("challenge.submit_answer")}
-                    </>
-                  )}
-                </button>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    onClick={handleRun}
+                    disabled={running}
+                    className="btn-primary flex items-center gap-2"
+                    title="Run Query (Ctrl+Enter)"
+                  >
+                    {running ? (
+                      <>
+                        <div className="inline-flex items-center gap-1 loading-dots">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        </div>
+                        <span>{t("challenge.running")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {t("challenge.run_query")}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={running}
+                    className="btn-success flex items-center gap-2"
+                  >
+                    {running ? (
+                      <>
+                        <div className="inline-flex items-center gap-1 loading-dots">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                          <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        </div>
+                        <span>{t("challenge.submitting")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {t("challenge.submit_answer")}
+                      </>
+                    )}
+                  </button>
+                </div>
+                <span className="text-xs text-gray-400 hidden sm:block">
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-500">Ctrl</kbd>
+                  <span className="mx-1">+</span>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-500">Enter</kbd>
+                  <span className="ml-1.5">to run</span>
+                </span>
               </div>
             </div>
 

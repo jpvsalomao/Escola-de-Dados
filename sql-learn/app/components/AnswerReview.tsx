@@ -108,7 +108,7 @@ export function AnswerReview({
           ${
             loading
               ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-              : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+              : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
           }
         `}
       >
@@ -220,12 +220,12 @@ export function AnswerReview({
 
           {/* Action Items */}
           {review.actionItems.length > 0 && (
-            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
-              <h4 className="font-medium text-indigo-900 text-sm mb-2">Next steps</h4>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h4 className="font-medium text-gray-900 text-sm mb-2">Next steps</h4>
               <ol className="space-y-1.5">
                 {review.actionItems.map((item, i) => (
-                  <li key={i} className="text-indigo-700 text-sm flex items-start gap-2">
-                    <span className="font-medium text-indigo-500">{i + 1}.</span>
+                  <li key={i} className="text-gray-700 text-sm flex items-start gap-2">
+                    <span className="font-medium text-gray-500">{i + 1}.</span>
                     <span>{item}</span>
                   </li>
                 ))}

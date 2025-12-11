@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useCallback } from "react";
 import { Editor as MonacoEditor } from "@monaco-editor/react";
 import { cn } from "@/app/lib/utils";
 
@@ -11,14 +12,27 @@ interface EditorProps {
   height?: string;
 }
 
-export function Editor({ value, onChange, className, readOnly = false, height = "300px" }: EditorProps) {
+export const Editor = React.memo(function Editor({
+  value,
+  onChange,
+  className,
+  readOnly = false,
+  height = "300px",
+}: EditorProps) {
+  const handleChange = useCallback(
+    (val: string | undefined) => {
+      onChange(val || "");
+    },
+    [onChange]
+  );
+
   return (
     <div className={cn("border border-gray-300 rounded-lg overflow-hidden", className)}>
       <MonacoEditor
         height={height}
         defaultLanguage="sql"
         value={value}
-        onChange={(val) => onChange(val || "")}
+        onChange={handleChange}
         theme="vs-light"
         options={{
           minimap: { enabled: false },
@@ -33,4 +47,4 @@ export function Editor({ value, onChange, className, readOnly = false, height = 
       />
     </div>
   );
-}
+});

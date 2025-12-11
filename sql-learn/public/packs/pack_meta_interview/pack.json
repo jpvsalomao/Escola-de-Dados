@@ -1003,9 +1003,9 @@
           ]
         },
         {
-          "name": "month1_revenue_correct",
+          "name": "first_month_revenue_correct",
           "assert": "SQL",
-          "sql": "SELECT monthly_revenue = 10000 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "sql": "SELECT monthly_revenue = 10000 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1013,9 +1013,9 @@
           ]
         },
         {
-          "name": "month1_ytd_correct",
+          "name": "first_month_ytd_correct",
           "assert": "SQL",
-          "sql": "SELECT ytd_revenue = 10000 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "sql": "SELECT ytd_revenue = 10000 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1099,9 +1099,9 @@
           ]
         },
         {
-          "name": "month1_mau_correct",
+          "name": "first_month_mau_correct",
           "assert": "SQL",
-          "sql": "SELECT mau = 11 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "sql": "SELECT mau = 11 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1109,9 +1109,9 @@
           ]
         },
         {
-          "name": "month1_stickiness_correct",
+          "name": "first_month_stickiness_correct",
           "assert": "SQL",
-          "sql": "SELECT ABS(stickiness_ratio - 11.04) < 0.1 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "sql": "SELECT ABS(stickiness_ratio - 11.04) < 0.1 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1564,9 +1564,9 @@
           ]
         },
         {
-          "name": "week1_signups_correct",
+          "name": "first_week_signups_correct",
           "assert": "SQL",
-          "sql": "SELECT total_signups = 10 AS ok FROM ({{USER_SQL}}) WHERE signup_week = 1",
+          "sql": "SELECT total_signups = 10 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1574,9 +1574,9 @@
           ]
         },
         {
-          "name": "week1_churned_correct",
+          "name": "first_week_churned_correct",
           "assert": "SQL",
-          "sql": "SELECT churned_users = 3 AS ok FROM ({{USER_SQL}}) WHERE signup_week = 1",
+          "sql": "SELECT churned_users = 3 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1584,9 +1584,9 @@
           ]
         },
         {
-          "name": "week1_rate_correct",
+          "name": "first_week_rate_correct",
           "assert": "SQL",
-          "sql": "SELECT ABS(churn_rate - 30.0) < 0.01 AS ok FROM ({{USER_SQL}}) WHERE signup_week = 1",
+          "sql": "SELECT ABS(churn_rate - 30.0) < 0.01 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true

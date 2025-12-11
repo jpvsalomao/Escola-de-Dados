@@ -52,6 +52,21 @@ export function ResultGrid({ data, className }: ResultGridProps) {
 function formatValue(value: unknown): string {
   if (value === null) return "NULL";
   if (value === undefined) return "";
+
+  // Detect Unix timestamp in milliseconds (dates from 2000-2100)
+  if (typeof value === "number") {
+    const MIN_TIMESTAMP = 946684800000; // 2000-01-01
+    const MAX_TIMESTAMP = 4102444800000; // 2100-01-01
+    if (value >= MIN_TIMESTAMP && value <= MAX_TIMESTAMP) {
+      return new Date(value).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      });
+    }
+  }
+
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }

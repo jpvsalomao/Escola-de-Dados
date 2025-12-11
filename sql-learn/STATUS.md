@@ -1,19 +1,25 @@
 # Project Status
 
-**Last Updated:** 2025-12-06 19:30
-**Current Sprint:** Sprint 15 - ChallengeTabs UI/UX
+**Last Updated:** 2025-12-10
+**Current Sprint:** Sprint 16 - Interview Challenge Fixes & Editor Stability
 **Sprint Status:** Complete
 
 ## Quick Context
 Recent sprints improved the SQL interview practice experience:
-- **Sprint 14**: Fixed AI Review false positives for alternative SQL approaches
 - **Sprint 15**: Unified ChallengeTabs colors following Design System v2.0
+- **Sprint 16**: Fixed challenge tests, date formatting, and editor cursor jumping
 
-## Key Files Modified (Sprints 14-15)
-- `app/api/review/route.ts` - Improved Claude prompts for SQL review accuracy
-- `app/components/ChallengeTabs.tsx` - Color unification, removed badge squeeze
+## Key Files Modified (Sprint 16)
+- `public/packs/pack_meta_interview/pack.json` - Test assertion fixes for date_trunc solutions
+- `app/components/ResultGrid.tsx` - UTC date formatting
+- `app/components/Editor.tsx` - React.memo() wrapper
+- `app/challenges/[packId]/[challengeId]/page.tsx` - Ref-based callback stabilization
 
 ## Recent Completions
+- [x] Sprint 16: Interview Challenge Fixes & Editor Stability
+  - Fixed tests to accept date_trunc() solutions (type-agnostic LIMIT 1)
+  - Added UTC date formatting in ResultGrid
+  - Fixed Monaco Editor cursor jumping with React.memo and useRef pattern
 - [x] Sprint 15: ChallengeTabs UI/UX improvements
   - Removed skill badge from Strategy tab (fixed squeeze issue)
   - Unified all hints to Amber family (Tier 1-3)
@@ -44,7 +50,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ## Next Up
-- [ ] Sprint 16: TBD (based on user needs)
+- [ ] Sprint 17: TBD (based on user needs)
 
 ## Sprint System
 - **Sprints folder:** `docs/sprints/`
@@ -53,6 +59,6 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## How to Continue
 1. Read this file for current state
-2. Check `docs/sprints/sprint-15/plan.md` for detailed tasks
+2. Check `docs/sprints/sprint-16/plan.md` for detailed tasks
 3. Run `npm run dev` to start development
 4. Follow `docs/PLAYBOOKS/iteration-playbook.md` for workflow
