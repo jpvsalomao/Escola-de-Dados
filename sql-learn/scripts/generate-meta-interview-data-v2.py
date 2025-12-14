@@ -127,7 +127,7 @@ def generate_advertisers_and_daily_pay():
 
     Design:
     - 20 advertisers with various current statuses
-    - daily_pay shows who paid "today" (2024-11-30)
+    - daily_pay shows who paid "today" (2024-12-01)
     - Test all state transitions:
       - NEW + paid → EXISTING
       - NEW + not paid → NEW
@@ -147,7 +147,7 @@ def generate_advertisers_and_daily_pay():
     # NEW + paid → EXISTING (2 cases)
     for i in [1, 2]:
         advertisers.append({"user_id": i, "status": "NEW"})
-        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 11, 30).date(), "amount": random.randint(50, 500)})
+        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 12, 1).date(), "amount": random.randint(50, 500)})
 
     # NEW + not paid → NEW (2 cases)
     for i in [3, 4]:
@@ -157,7 +157,7 @@ def generate_advertisers_and_daily_pay():
     # EXISTING + paid → EXISTING (3 cases)
     for i in [5, 6, 7]:
         advertisers.append({"user_id": i, "status": "EXISTING"})
-        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 11, 30).date(), "amount": random.randint(100, 1000)})
+        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 12, 1).date(), "amount": random.randint(100, 1000)})
 
     # EXISTING + not paid → CHURN (3 cases)
     for i in [8, 9, 10]:
@@ -167,7 +167,7 @@ def generate_advertisers_and_daily_pay():
     # CHURN + paid → RESURRECT (3 cases)
     for i in [11, 12, 13]:
         advertisers.append({"user_id": i, "status": "CHURN"})
-        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 11, 30).date(), "amount": random.randint(75, 300)})
+        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 12, 1).date(), "amount": random.randint(75, 300)})
 
     # CHURN + not paid → CHURN (3 cases)
     for i in [14, 15, 16]:
@@ -177,7 +177,7 @@ def generate_advertisers_and_daily_pay():
     # RESURRECT + paid → EXISTING (2 cases)
     for i in [17, 18]:
         advertisers.append({"user_id": i, "status": "RESURRECT"})
-        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 11, 30).date(), "amount": random.randint(200, 800)})
+        daily_pay.append({"user_id": i, "paid_date": datetime(2024, 12, 1).date(), "amount": random.randint(200, 800)})
 
     # RESURRECT + not paid → CHURN (2 cases)
     for i in [19, 20]:

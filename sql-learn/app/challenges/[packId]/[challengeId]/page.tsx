@@ -16,6 +16,10 @@ import { executeQuery, getTableSchema } from "@/app/lib/duck";
 import { markCompleted, recordAttempt, getProgress } from "@/app/lib/progress";
 import { logChallengeAttempt } from "@/app/lib/telemetry";
 import type { Challenge, GradeResult, PackSchema } from "@/app/lib/types";
+import type { OnMount } from "@monaco-editor/react";
+
+// Extract editor type from OnMount callback
+type EditorInstance = Parameters<OnMount>[0];
 
 export default function ChallengePage() {
   const { t } = useTranslation();
@@ -45,6 +49,7 @@ export default function ChallengePage() {
   const gradeResultRef = useRef(gradeResult);
   const resultsRef = useRef(results);
   const errorRef = useRef(error);
+  const editorRef = useRef<EditorInstance | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -151,6 +156,17 @@ export default function ChallengePage() {
   // Memoized onChange handler for Editor to prevent unnecessary re-renders
   const handleSqlChange = useCallback((value: string) => {
     setSql(value);
+  }, []);
+
+  // Store editor instance for programmatic control (e.g., clear button)
+  const handleEditorMount = useCallback((editor: EditorInstance) => {
+    editorRef.current = editor;
+  }, []);
+
+  // Clear editor content using editor instance (uncontrolled mode)
+  const handleClearEditor = useCallback(() => {
+    editorRef.current?.setValue("");
+    setSql("");
   }, []);
 
   async function handleSubmit() {
@@ -430,6 +446,8 @@ export default function ChallengePage() {
               packId={packId}
               challengeId={challengeId}
               userSql={sql}
+              userQueryResults={results}
+              userQueryError={error || undefined}
               expandedTables={expandedTables}
               tableSchemas={tableSchemas}
               duckdbReady={duckdbReady}
@@ -458,7 +476,7 @@ export default function ChallengePage() {
                 </div>
                 {sql.trim() && (
                   <button
-                    onClick={() => setSql("")}
+                    onClick={handleClearEditor}
                     className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,8 +488,9 @@ export default function ChallengePage() {
               </div>
 
               <Editor
-                value={sql}
+                defaultValue=""
                 onChange={handleSqlChange}
+                onMount={handleEditorMount}
                 className="mb-4"
                 height={packId === "pack_meta_interview" ? "500px" : "300px"}
               />

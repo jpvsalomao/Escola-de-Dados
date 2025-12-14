@@ -18,6 +18,9 @@ interface ChallengeTabsProps {
   challengeId: string;
   // User's current SQL (for AI review)
   userSql: string;
+  // User's query results (for AI review)
+  userQueryResults?: Record<string, unknown>[];
+  userQueryError?: string;
   // Table expansion state (managed by parent)
   expandedTables: Set<string>;
   tableSchemas: Record<string, Array<{ name: string; type: string }>>;
@@ -43,6 +46,8 @@ export function ChallengeTabs({
   packId,
   challengeId,
   userSql,
+  userQueryResults,
+  userQueryError,
   expandedTables,
   tableSchemas,
   duckdbReady,
@@ -471,6 +476,8 @@ export function ChallengeTabs({
               solutionSql={challenge.solution_sql}
               tables={pack.datasets.map((ds) => ds.name)}
               hint={challenge.hints?.tier1 || challenge.hint}
+              userQueryResults={userQueryResults}
+              userQueryError={userQueryError}
             />
           </div>
         )}

@@ -22,6 +22,9 @@ interface AnswerReviewProps {
   solutionSql: string;
   tables: string[];
   hint?: string;
+  // Actual query results for comparison
+  userQueryResults?: Record<string, unknown>[];
+  userQueryError?: string;
 }
 
 const correctnessConfig: Record<string, { border: string; bg: string; text: string; label: string }> = {
@@ -51,6 +54,8 @@ export function AnswerReview({
   solutionSql,
   tables,
   hint,
+  userQueryResults,
+  userQueryError,
 }: AnswerReviewProps) {
   const [review, setReview] = useState<ReviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,18 +72,31 @@ export function AnswerReview({
     setReview(null);
 
     try {
+      // Custom JSON replacer to handle BigInt values (DuckDB returns these for large integers)
+      const jsonReplacer = (_key: string, value: unknown): unknown => {
+        if (typeof value === "bigint") {
+          return Number(value);
+        }
+        return value;
+      };
+
       const response = await fetch("/api/review", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          userSql,
-          challengePrompt,
-          solutionSql,
-          tables,
-          hint,
-        }),
+        body: JSON.stringify(
+          {
+            userSql,
+            challengePrompt,
+            solutionSql,
+            tables,
+            hint,
+            userQueryResults,
+            userQueryError,
+          },
+          jsonReplacer
+        ),
       });
 
       if (!response.ok) {

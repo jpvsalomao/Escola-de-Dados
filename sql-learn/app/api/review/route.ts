@@ -8,6 +8,9 @@ interface ReviewRequest {
   solutionSql: string;
   tables: string[];
   hint?: string;
+  // Actual query results for evidence-based review
+  userQueryResults?: Record<string, unknown>[];
+  userQueryError?: string;
 }
 
 interface ReviewIssue {
@@ -86,64 +89,121 @@ export async function POST(request: NextRequest) {
   }
 
   // Build the prompt for Claude
-  const systemPrompt = `You are a senior data scientist reviewing SQL interview answers.
+  const systemPrompt = `You are a senior data scientist reviewing SQL interview answers. Provide comprehensive feedback that evaluates both the query results AND the code quality.
 
-CRITICAL SQL RULES - You MUST consider these before critiquing:
-1. COUNT() ignores NULL values - COUNT(DISTINCT col) only counts non-NULL distinct values
-2. LEFT JOIN from table A to B: rows from A always appear; B columns are NULL when no match
-3. Multiple valid approaches exist: EXISTS, IN, LEFT JOIN + COUNT, window functions, subqueries
-4. A LEFT JOIN + COUNT(column) approach CAN be equivalent to an EXISTS approach - the LEFT JOIN restricts the base set, and COUNT ignores the NULLs from non-matches
+## REVIEW APPROACH:
+1. **Check Results**: If actual results are provided, verify they answer the question correctly
+2. **Analyze Code Logic**: Even if results are correct, check if the logic would work on edge cases
+3. **Guide to Best Practice**: Help the user understand optimal approaches
 
-REVIEW PROCESS:
-1. First, trace through the query logic step by step
-2. Consider how NULLs propagate through JOINs and aggregations
-3. Compare the LOGIC, not just syntax, to the reference solution
-4. Only flag issues if the query would produce WRONG RESULTS, not just different style
+## WHAT TO EVALUATE:
 
-IMPORTANT:
-- If the user's approach is logically equivalent but uses different syntax, mark as "correct"
-- Be very careful about LEFT JOIN + COUNT patterns - they often correctly handle NULLs
-- When unsure, lean toward "correct" rather than giving wrong feedback
-- Focus on whether the final result would be correct, not intermediate style choices
+### Results (if provided):
+- Do the columns match what was asked?
+- Are the values correct for the given data?
+- Is the format correct (rounding, ordering, etc.)?
 
-GUIDELINES:
-- Be concise (max 150 words total)
-- Don't reveal the complete solution
-- Be encouraging but honest
+### Code Logic (always check):
+- Would this work with NULL values?
+- Would this work with empty tables?
+- Would this work with duplicate data?
+- Is the JOIN logic correct for all cases?
+- Are aggregations handling edge cases?
+
+### SQL Knowledge - BE VERY CAREFUL WITH THESE:
+- COUNT(column) and COUNT(DISTINCT column) IGNORE NULLs - they NEVER count NULL values
+- COUNT(*) counts all rows including those with NULLs
+
+**LEFT JOIN + COUNT Pattern (THIS IS VALID - DO NOT FLAG AS WRONG):**
+When you do: FROM table_A LEFT JOIN table_B ON condition, then COUNT(DISTINCT table_B.column):
+- The result set only contains rows from table_A (the LEFT side)
+- For non-matching rows, table_B.column is NULL
+- COUNT(DISTINCT table_B.column) correctly counts only the matched (non-NULL) values
+- This is a VALID and CORRECT pattern - do NOT claim it has flaws
+
+**Concrete Example:**
+FROM active_users LEFT JOIN video_callers ON user_id, then COUNT(DISTINCT video_caller_id):
+- Only active_users appear in the result (LEFT side controls the rows)
+- video_caller_id is NULL for non-matches, non-NULL for matches
+- COUNT(DISTINCT video_caller_id) counts ONLY the matches (ignores NULLs)
+- This correctly counts "active users who made video calls"
+- There is NO WAY for "extra users not in active_users" to appear - the LEFT side controls the row set
+
+- Different approaches (EXISTS vs LEFT JOIN + COUNT, subquery vs CTE) can be equally valid
+
+## CORRECTNESS LEVELS:
+- "correct": Results are right AND logic is sound for edge cases
+- "partially_correct": Results are right but logic has potential edge case issues, OR results are close but missing something
+- "incorrect": Results are wrong OR there's a critical logic flaw
+
+## GUIDELINES:
+- Be concise (max 200 words), encouraging but honest
+- Praise good patterns, suggest improvements constructively
+- If results are correct but you see potential edge case issues, mention them as improvements rather than errors
 - Consider DuckDB SQL syntax (similar to PostgreSQL)
 
 Respond with valid JSON:
 {
   "correctness": "correct" | "partially_correct" | "incorrect",
-  "summary": "1-2 sentence verdict explaining the logic",
+  "summary": "1-2 sentence verdict explaining your assessment",
   "issues": [{"type": "logic|syntax|efficiency|edge_case", "description": "...", "suggestion": "..."}],
   "strengths": ["what they did well"],
-  "actionItems": ["specific improvement"]
+  "actionItems": ["specific next step to improve"]
 }
 
-Keep issues to max 2 items, actionItems to max 3.`;
+Keep issues to max 2, actionItems to max 3.`;
 
-  const userPrompt = `QUESTION:
+  // Format query results for the prompt
+  const formatResults = (results: Record<string, unknown>[] | undefined, error: string | undefined): string => {
+    if (error) {
+      return `ERROR: ${error}`;
+    }
+    if (!results || results.length === 0) {
+      return "No results (query not run yet or returned empty)";
+    }
+    // Limit to first 10 rows for readability
+    const limitedResults = results.slice(0, 10);
+    const hasMore = results.length > 10;
+    const formatted = JSON.stringify(limitedResults, null, 2);
+    return hasMore ? `${formatted}\n... (${results.length} total rows)` : formatted;
+  };
+
+  const userQueryOutput = formatResults(body.userQueryResults, body.userQueryError);
+  const hasResults = body.userQueryResults && body.userQueryResults.length > 0;
+
+  const userPrompt = `## CHALLENGE:
 ${challengePrompt}
 
-AVAILABLE TABLES:
+## AVAILABLE TABLES:
 ${tables.join(", ")}
 
-${body.hint ? `HINT PROVIDED:\n${body.hint}\n\n` : ""}REFERENCE SOLUTION (one valid approach - others may exist):
+${body.hint ? `## HINT PROVIDED:\n${body.hint}\n\n` : ""}## REFERENCE SOLUTION (one valid approach):
+\`\`\`sql
 ${solutionSql}
+\`\`\`
 
-USER'S ANSWER:
+## USER'S SQL QUERY:
+\`\`\`sql
 ${userSql}
+\`\`\`
 
-IMPORTANT: The reference solution shows ONE valid approach. The user's query may use a different but equally valid approach (e.g., LEFT JOIN + COUNT vs EXISTS, subquery vs CTE). Analyze whether the user's query would produce the CORRECT RESULTS, not whether it matches the reference syntax.
+${hasResults ? `## ACTUAL QUERY OUTPUT:
+${userQueryOutput}
 
-Provide structured JSON feedback.`;
+Please review BOTH:
+1. Whether these results correctly answer the question
+2. Whether the SQL logic would handle edge cases (NULLs, empty data, duplicates)
+
+If results are correct and logic is sound, mark as "correct". If results are correct but there are edge case concerns, you can still mark as "correct" but mention the considerations as actionItems.` : `## NOTE:
+The user hasn't run their query yet. Review the SQL logic and provide guidance, but be clear that you cannot verify correctness without seeing actual output.`}
+
+Provide comprehensive JSON feedback.`;
 
   try {
     const client = new Anthropic({ apiKey });
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       messages: [
         {
@@ -163,28 +223,58 @@ Provide structured JSON feedback.`;
     // Parse the JSON response
     let review: ReviewResponse;
     try {
-      // Clean up the response in case it has markdown code blocks
+      // Clean up the response - extract JSON from markdown code blocks if present
       let jsonText = textContent.text.trim();
-      if (jsonText.startsWith("```json")) {
-        jsonText = jsonText.slice(7);
+
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1].trim();
+      } else {
+        // If no code blocks, try to find JSON object directly
+        const jsonObjectMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (jsonObjectMatch) {
+          jsonText = jsonObjectMatch[0];
+        }
       }
-      if (jsonText.startsWith("```")) {
-        jsonText = jsonText.slice(3);
-      }
-      if (jsonText.endsWith("```")) {
-        jsonText = jsonText.slice(0, -3);
-      }
-      jsonText = jsonText.trim();
 
       review = JSON.parse(jsonText);
-    } catch {
+
+      // Validate required fields
+      if (!review.correctness || !review.summary) {
+        throw new Error("Missing required fields in response");
+      }
+
+      // Ensure arrays exist
+      review.issues = review.issues || [];
+      review.strengths = review.strengths || [];
+      review.actionItems = review.actionItems || [];
+
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("Raw response:", textContent.text);
+
       // If JSON parsing fails, create a fallback response
+      // Try to extract useful info from the raw text
+      let summary = "Unable to parse AI response. Please try again.";
+      const rawText = textContent.text;
+
+      // Try to extract correctness from raw text
+      let correctness: "correct" | "partially_correct" | "incorrect" = "partially_correct";
+      if (rawText.toLowerCase().includes('"correctness": "correct"') ||
+          rawText.toLowerCase().includes('"correctness":"correct"')) {
+        correctness = "correct";
+      } else if (rawText.toLowerCase().includes('"correctness": "incorrect"') ||
+                 rawText.toLowerCase().includes('"correctness":"incorrect"')) {
+        correctness = "incorrect";
+      }
+
       review = {
-        correctness: "partially_correct",
-        summary: textContent.text.slice(0, 200),
+        correctness,
+        summary,
         issues: [],
         strengths: [],
-        actionItems: ["Review the reference solution approach"],
+        actionItems: ["Try running the review again"],
       };
     }
 
