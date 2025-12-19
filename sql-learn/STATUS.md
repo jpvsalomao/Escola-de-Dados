@@ -1,21 +1,28 @@
 # Project Status
 
-**Last Updated:** 2025-12-10
-**Current Sprint:** Sprint 16 - Interview Challenge Fixes & Editor Stability
+**Last Updated:** 2025-12-17
+**Current Sprint:** Sprint 17 - Test & Data Quality Improvement
 **Sprint Status:** Complete
 
 ## Quick Context
 Recent sprints improved the SQL interview practice experience:
-- **Sprint 15**: Unified ChallengeTabs colors following Design System v2.0
 - **Sprint 16**: Fixed challenge tests, date formatting, and editor cursor jumping
+- **Sprint 17**: Comprehensive test strengthening for pack_meta_interview (125+ assertions)
 
-## Key Files Modified (Sprint 16)
-- `public/packs/pack_meta_interview/pack.json` - Test assertion fixes for date_trunc solutions
-- `app/components/ResultGrid.tsx` - UTC date formatting
-- `app/components/Editor.tsx` - React.memo() wrapper
-- `app/challenges/[packId]/[challengeId]/page.tsx` - Ref-based callback stabilization
+## Key Files Modified (Sprint 17)
+- `scripts/generate-meta-interview-data-v3.py` - NEW: Comprehensive data generator (~900 lines)
+- `public/packs/pack_meta_interview/pack.json` - All 20 challenges with strengthened tests
+- `public/packs/pack_meta_interview/*.parquet` - All 18 parquet files regenerated with edge cases
+- `docs/DATA_DESIGN.md` - NEW: Edge case documentation for all challenges
 
 ## Recent Completions
+- [x] Sprint 17: Test & Data Quality Improvement
+  - Created v3 data generator with comprehensive edge cases
+  - Expanded tests from ~60 to 125+ assertions
+  - Added decoy data, boundary values, edge cases to all parquet files
+  - All 8 advertiser state transitions mapped (Q12)
+  - DENSE_RANK tie handling for Tech category (Q14)
+  - Verification: 20 challenges passed, 0 failed
 - [x] Sprint 16: Interview Challenge Fixes & Editor Stability
   - Fixed tests to accept date_trunc() solutions (type-agnostic LIMIT 1)
   - Added UTC date formatting in ResultGrid
@@ -50,7 +57,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ## Next Up
-- [ ] Sprint 17: TBD (based on user needs)
+- [ ] Sprint 18: TBD (based on user needs)
 
 ## Sprint System
 - **Sprints folder:** `docs/sprints/`
@@ -59,6 +66,6 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## How to Continue
 1. Read this file for current state
-2. Check `docs/sprints/sprint-16/plan.md` for detailed tasks
+2. Check `docs/sprints/sprint-17/plan.md` for detailed tasks
 3. Run `npm run dev` to start development
 4. Follow `docs/PLAYBOOKS/iteration-playbook.md` for workflow

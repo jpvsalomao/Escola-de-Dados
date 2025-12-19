@@ -153,14 +153,44 @@
       "solution_sql": "SELECT p.page_id FROM pages p LEFT JOIN page_likes pl ON p.page_id = pl.page_id WHERE pl.page_id IS NULL ORDER BY p.page_id",
       "tests": [
         {
-          "name": "returns_3_pages",
+          "name": "correct_row_count",
           "assert": "ROWCOUNT",
           "expected": 3
+        },
+        {
+          "name": "has_page_id_column",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) >= 1 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name = 'page_id'",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
         },
         {
           "name": "no_likes_for_returned_pages",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r JOIN page_likes pl ON r.page_id = pl.page_id",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "includes_expected_pages",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM ({{USER_SQL}}) WHERE page_id IN (8, 9, 10)",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_pages_with_likes",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE page_id IN (SELECT DISTINCT page_id FROM page_likes)",
           "expected": [
             {
               "ok": true
@@ -218,9 +248,14 @@
       "solution_sql": "SELECT user_id, MIN(action_date) AS first_activity_date, COUNT(*) AS total_activities FROM actions GROUP BY user_id ORDER BY user_id",
       "tests": [
         {
-          "name": "all_users_have_activities",
+          "name": "correct_row_count",
+          "assert": "ROWCOUNT",
+          "expected": 25
+        },
+        {
+          "name": "has_required_columns",
           "assert": "SQL",
-          "sql": "SELECT MIN(total_activities) >= 1 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'first_activity_date', 'total_activities')",
           "expected": [
             {
               "ok": true
@@ -228,9 +263,9 @@
           ]
         },
         {
-          "name": "has_required_columns",
+          "name": "all_users_have_activities",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'first_activity_date', 'total_activities')",
+          "sql": "SELECT MIN(total_activities) >= 1 AS ok FROM ({{USER_SQL}})",
           "expected": [
             {
               "ok": true
@@ -260,7 +295,7 @@
         {
           "name": "first_total_correct",
           "assert": "SQL",
-          "sql": "SELECT total_activities = 40 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT total_activities = 41 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -318,9 +353,9 @@
       "solution_sql": "SELECT user_id, MIN(post_date) AS first_post_date, MAX(post_date) AS last_post_date, DATEDIFF('day', MIN(post_date), MAX(post_date)) AS days_between FROM posts WHERE YEAR(post_date) = 2024 GROUP BY user_id HAVING COUNT(*) >= 2 ORDER BY days_between DESC",
       "tests": [
         {
-          "name": "returns_8_users",
+          "name": "correct_row_count",
           "assert": "ROWCOUNT",
-          "expected": 8
+          "expected": 10
         },
         {
           "name": "has_required_columns",
@@ -333,9 +368,29 @@
           ]
         },
         {
+          "name": "excludes_2023_posts",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE first_post_date < '2024-01-01'",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_single_post_users",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) u WHERE (SELECT COUNT(*) FROM posts p WHERE p.user_id = u.user_id AND YEAR(p.post_date) = 2024) < 2",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "ordered_by_days_desc",
           "assert": "SQL",
-          "sql": "WITH ranked AS (SELECT days_between, ROW_NUMBER() OVER (ORDER BY days_between DESC) as rn FROM ({{USER_SQL}})) SELECT (SELECT days_between FROM ranked WHERE rn = 1) >= (SELECT days_between FROM ranked WHERE rn = 2) AS ok",
+          "sql": "WITH r AS (SELECT days_between, ROW_NUMBER() OVER () as rn FROM ({{USER_SQL}})) SELECT COALESCE(BOOL_AND(r1.days_between >= r2.days_between), true) AS ok FROM r r1 JOIN r r2 ON r1.rn = r2.rn - 1",
           "expected": [
             {
               "ok": true
@@ -343,19 +398,9 @@
           ]
         },
         {
-          "name": "first_user_correct",
+          "name": "first_row_correct",
           "assert": "SQL",
-          "sql": "SELECT user_id = 4 AS ok FROM ({{USER_SQL}}) LIMIT 1",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
-        },
-        {
-          "name": "first_days_between_correct",
-          "assert": "SQL",
-          "sql": "SELECT days_between = 335 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT user_id = 9 AND days_between = 288 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -413,14 +458,14 @@
       "solution_sql": "SELECT app_id, ROUND(100.0 * SUM(CASE WHEN action_type = 'click' THEN 1 ELSE 0 END) / SUM(CASE WHEN action_type = 'impression' THEN 1 ELSE 0 END), 2) AS ctr FROM actions WHERE YEAR(action_date) = 2024 GROUP BY app_id HAVING SUM(CASE WHEN action_type = 'impression' THEN 1 ELSE 0 END) > 0 ORDER BY ctr DESC",
       "tests": [
         {
-          "name": "returns_4_apps",
+          "name": "correct_row_count",
           "assert": "ROWCOUNT",
-          "expected": 4
+          "expected": 5
         },
         {
-          "name": "ctr_values_valid",
+          "name": "has_required_columns",
           "assert": "SQL",
-          "sql": "SELECT MIN(ctr) >= 0 AND MAX(ctr) <= 100 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('app_id', 'ctr')",
           "expected": [
             {
               "ok": true
@@ -428,9 +473,49 @@
           ]
         },
         {
-          "name": "has_correct_columns",
+          "name": "ctr_in_valid_range",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('app_id', 'ctr')",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ctr < 0 OR ctr > 100",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_app_with_no_impressions",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE app_id = 6",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "includes_app_with_zero_ctr",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 1 AS ok FROM ({{USER_SQL}}) WHERE app_id = 5 AND ctr = 0.0",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "ordered_by_ctr_desc",
+          "assert": "SQL",
+          "sql": "WITH r AS (SELECT ctr, ROW_NUMBER() OVER () as rn FROM ({{USER_SQL}})) SELECT COALESCE(BOOL_AND(r1.ctr >= r2.ctr), true) AS ok FROM r r1 JOIN r r2 ON r1.rn = r2.rn - 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "first_ctr_correct",
+          "assert": "SQL",
+          "sql": "SELECT ABS(ctr - 25.0) < 0.01 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -515,7 +600,7 @@
         {
           "name": "correct_video_callers",
           "assert": "SQL",
-          "sql": "SELECT video_callers = 4 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT video_callers = 3 AS ok FROM ({{USER_SQL}})",
           "expected": [
             {
               "ok": true
@@ -525,7 +610,17 @@
         {
           "name": "correct_percentage",
           "assert": "SQL",
-          "sql": "SELECT ABS(video_call_percentage - 40.0) < 0.01 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT ABS(video_call_percentage - 30.0) < 0.01 AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "percentage_in_valid_range",
+          "assert": "SQL",
+          "sql": "SELECT video_call_percentage >= 0 AND video_call_percentage <= 100 AS ok FROM ({{USER_SQL}})",
           "expected": [
             {
               "ok": true
@@ -589,9 +684,9 @@
           "expected": 5
         },
         {
-          "name": "all_have_3plus_callees",
+          "name": "has_required_columns",
           "assert": "SQL",
-          "sql": "SELECT MIN(distinct_callees) >= 3 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('caller_id', 'distinct_callees')",
           "expected": [
             {
               "ok": true
@@ -599,9 +694,9 @@
           ]
         },
         {
-          "name": "has_required_columns",
+          "name": "all_have_3plus_callees",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('caller_id', 'distinct_callees')",
+          "sql": "SELECT MIN(distinct_callees) >= 3 AS ok FROM ({{USER_SQL}})",
           "expected": [
             {
               "ok": true
@@ -622,6 +717,26 @@
           "name": "first_callees_correct",
           "assert": "SQL",
           "sql": "SELECT distinct_callees = 6 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "uses_count_distinct",
+          "assert": "SQL",
+          "sql": "WITH test_data AS (SELECT caller_id, COUNT(DISTINCT callee_id) AS expected_count FROM calls WHERE call_date BETWEEN '2024-11-24' AND '2024-11-30' GROUP BY caller_id HAVING COUNT(DISTINCT callee_id) >= 3) SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) u WHERE NOT EXISTS (SELECT 1 FROM test_data t WHERE t.caller_id = u.caller_id AND t.expected_count = u.distinct_callees)",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "ordered_by_callees_desc",
+          "assert": "SQL",
+          "sql": "WITH r AS (SELECT distinct_callees, ROW_NUMBER() OVER () as rn FROM ({{USER_SQL}})) SELECT COALESCE(BOOL_AND(r1.distinct_callees >= r2.distinct_callees), true) AS ok FROM r r1 JOIN r r2 ON r1.rn = r2.rn - 1",
           "expected": [
             {
               "ok": true
@@ -684,16 +799,6 @@
           "expected": 5
         },
         {
-          "name": "total_users_match",
-          "assert": "SQL",
-          "sql": "SELECT SUM(user_count) = (SELECT COUNT(*) FROM users) AS ok FROM ({{USER_SQL}})",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
-        },
-        {
           "name": "has_required_columns",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('comment_bucket', 'user_count')",
@@ -704,9 +809,39 @@
           ]
         },
         {
+          "name": "total_users_match",
+          "assert": "SQL",
+          "sql": "SELECT SUM(user_count) = (SELECT COUNT(*) FROM users) AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "bucket_0_count_correct",
           "assert": "SQL",
-          "sql": "SELECT user_count = 5 AS ok FROM ({{USER_SQL}}) WHERE comment_bucket = '0'",
+          "sql": "SELECT user_count = 15 AS ok FROM ({{USER_SQL}}) WHERE comment_bucket = '0'",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "all_buckets_present",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 5 AS ok FROM ({{USER_SQL}}) WHERE comment_bucket IN ('0', '1-2', '3-5', '6-10', '10+')",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "bucket_10plus_correct",
+          "assert": "SQL",
+          "sql": "SELECT user_count = 3 AS ok FROM ({{USER_SQL}}) WHERE comment_bucket = '10+'",
           "expected": [
             {
               "ok": true
@@ -776,6 +911,16 @@
           ]
         },
         {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'page_id', 'friends_who_liked')",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "no_already_liked_pages",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r JOIN page_likes pl ON r.user_id = pl.user_id AND r.page_id = pl.page_id",
@@ -786,9 +931,9 @@
           ]
         },
         {
-          "name": "has_required_columns",
+          "name": "friends_count_positive",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'page_id', 'friends_who_liked')",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE friends_who_liked < 1",
           "expected": [
             {
               "ok": true
@@ -808,7 +953,7 @@
         {
           "name": "first_page_correct",
           "assert": "SQL",
-          "sql": "SELECT page_id = 4 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT page_id = 3 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -818,7 +963,7 @@
         {
           "name": "first_friends_count_correct",
           "assert": "SQL",
-          "sql": "SELECT friends_who_liked = 8 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT friends_who_liked = 2 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -878,16 +1023,6 @@
       "solution_sql": "WITH ranked AS (SELECT category, post_id, engagement_score, DENSE_RANK() OVER (PARTITION BY category ORDER BY engagement_score DESC) AS dr FROM posts) SELECT category, post_id, engagement_score FROM ranked WHERE dr = 2 ORDER BY category",
       "tests": [
         {
-          "name": "one_row_per_category",
-          "assert": "SQL",
-          "sql": "SELECT COUNT(*) = COUNT(DISTINCT category) AS ok FROM ({{USER_SQL}})",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
-        },
-        {
           "name": "has_required_columns",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('category', 'post_id', 'engagement_score')",
@@ -900,7 +1035,7 @@
         {
           "name": "is_second_highest",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM posts p WHERE p.category = r.category AND p.engagement_score > r.engagement_score GROUP BY p.category HAVING COUNT(DISTINCT p.engagement_score) < 1)",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE (SELECT COUNT(DISTINCT p.engagement_score) FROM posts p WHERE p.category = r.category AND p.engagement_score > r.engagement_score) != 1",
           "expected": [
             {
               "ok": true
@@ -908,9 +1043,9 @@
           ]
         },
         {
-          "name": "entertainment_post_correct",
+          "name": "excludes_single_post_categories",
           "assert": "SQL",
-          "sql": "SELECT post_id = 20 AS ok FROM ({{USER_SQL}}) WHERE category = 'entertainment'",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE category = 'single'",
           "expected": [
             {
               "ok": true
@@ -918,9 +1053,19 @@
           ]
         },
         {
-          "name": "entertainment_score_correct",
+          "name": "entertainment_correct",
           "assert": "SQL",
-          "sql": "SELECT engagement_score = 394 AS ok FROM ({{USER_SQL}}) WHERE category = 'entertainment'",
+          "sql": "SELECT engagement_score = 480 AS ok FROM ({{USER_SQL}}) WHERE category = 'entertainment' LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "tech_has_tie",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM ({{USER_SQL}}) WHERE category = 'tech'",
           "expected": [
             {
               "ok": true
@@ -983,9 +1128,9 @@
           "expected": 12
         },
         {
-          "name": "ytd_never_less_than_monthly",
+          "name": "has_required_columns",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ytd_revenue < monthly_revenue",
+          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('month', 'monthly_revenue', 'ytd_revenue')",
           "expected": [
             {
               "ok": true
@@ -993,9 +1138,9 @@
           ]
         },
         {
-          "name": "has_required_columns",
+          "name": "ytd_never_less_than_monthly",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('month', 'monthly_revenue', 'ytd_revenue')",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ytd_revenue < monthly_revenue",
           "expected": [
             {
               "ok": true
@@ -1016,6 +1161,36 @@
           "name": "first_month_ytd_correct",
           "assert": "SQL",
           "sql": "SELECT ytd_revenue = 10000 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "ytd_monotonic_increase",
+          "assert": "SQL",
+          "sql": "WITH r AS (SELECT month, ytd_revenue, LAG(ytd_revenue) OVER (ORDER BY month) as prev FROM ({{USER_SQL}})) SELECT COUNT(*) = 0 AS ok FROM r WHERE prev IS NOT NULL AND ytd_revenue < prev",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "ytd_equals_running_sum",
+          "assert": "SQL",
+          "sql": "WITH r AS (SELECT month, monthly_revenue, ytd_revenue, SUM(monthly_revenue) OVER (ORDER BY month) as calc_ytd FROM ({{USER_SQL}})) SELECT COUNT(*) = 0 AS ok FROM r WHERE ABS(ytd_revenue - calc_ytd) > 0.01",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_2023",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE month < 1 OR month > 12",
           "expected": [
             {
               "ok": true
@@ -1074,19 +1249,9 @@
       "solution_sql": "WITH daily_counts AS (SELECT action_date, COUNT(DISTINCT user_id) AS daily_count FROM actions WHERE YEAR(action_date) = 2024 GROUP BY action_date), monthly_dau AS (SELECT MONTH(action_date) AS month, AVG(daily_count) AS avg_dau FROM daily_counts GROUP BY MONTH(action_date)), monthly_mau AS (SELECT MONTH(action_date) AS month, COUNT(DISTINCT user_id) AS mau FROM actions WHERE YEAR(action_date) = 2024 GROUP BY MONTH(action_date)) SELECT d.month, ROUND(d.avg_dau, 2) AS avg_dau, m.mau, ROUND(100.0 * d.avg_dau / m.mau, 2) AS stickiness_ratio FROM monthly_dau d JOIN monthly_mau m ON d.month = m.month ORDER BY d.month",
       "tests": [
         {
-          "name": "returns_all_months_with_data",
+          "name": "returns_12_months",
           "assert": "ROWCOUNT",
-          "expected": 11
-        },
-        {
-          "name": "stickiness_between_0_and_100",
-          "assert": "SQL",
-          "sql": "SELECT MIN(stickiness_ratio) >= 0 AND MAX(stickiness_ratio) <= 100 AS ok FROM ({{USER_SQL}})",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
+          "expected": 12
         },
         {
           "name": "has_required_columns",
@@ -1099,9 +1264,29 @@
           ]
         },
         {
+          "name": "stickiness_in_valid_range",
+          "assert": "SQL",
+          "sql": "SELECT MIN(stickiness_ratio) >= 0 AND MAX(stickiness_ratio) <= 100 AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "mau_positive",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE mau <= 0",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "first_month_mau_correct",
           "assert": "SQL",
-          "sql": "SELECT mau = 11 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT mau = 13 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1111,7 +1296,7 @@
         {
           "name": "first_month_stickiness_correct",
           "assert": "SQL",
-          "sql": "SELECT ABS(stickiness_ratio - 11.04) < 0.1 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT ABS(stickiness_ratio - 9.95) < 0.5 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1170,14 +1355,9 @@
       "solution_sql": "WITH ranked AS (SELECT user_id, name, email, updated_at, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC) AS rn FROM user_records) SELECT user_id, name, email, updated_at FROM ranked WHERE rn = 1 ORDER BY user_id",
       "tests": [
         {
-          "name": "no_duplicate_users",
-          "assert": "SQL",
-          "sql": "SELECT COUNT(*) = COUNT(DISTINCT user_id) AS ok FROM ({{USER_SQL}})",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
+          "name": "correct_row_count",
+          "assert": "ROWCOUNT",
+          "expected": 30
         },
         {
           "name": "has_required_columns",
@@ -1190,9 +1370,39 @@
           ]
         },
         {
+          "name": "no_duplicate_users",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = COUNT(DISTINCT user_id) AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "most_recent_kept",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM user_records ur WHERE ur.user_id = r.user_id AND ur.updated_at > r.updated_at)",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "all_users_represented",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(DISTINCT user_id) = (SELECT COUNT(DISTINCT user_id) FROM user_records) AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "first_user_correct",
+          "assert": "SQL",
+          "sql": "SELECT user_id = 1 AND name = 'Alice' AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1267,7 +1477,7 @@
         {
           "name": "growth_formula_correct",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ABS(yoy_growth_rate - ROUND(100.0 * (mau_2024 - mau_2023) / mau_2023, 2)) > 0.01",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ABS(yoy_growth_rate - ROUND(100.0 * (mau_2024 - mau_2023) / mau_2023, 2)) > 0.1",
           "expected": [
             {
               "ok": true
@@ -1277,7 +1487,7 @@
         {
           "name": "month1_mau_2024_correct",
           "assert": "SQL",
-          "sql": "SELECT mau_2024 = 206 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "sql": "SELECT mau_2024 = 212 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
           "expected": [
             {
               "ok": true
@@ -1297,7 +1507,17 @@
         {
           "name": "month1_growth_correct",
           "assert": "SQL",
-          "sql": "SELECT ABS(yoy_growth_rate - 14.44) < 0.1 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "sql": "SELECT ABS(yoy_growth_rate - 17.78) < 0.1 AS ok FROM ({{USER_SQL}}) WHERE month = 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_2022_data",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE month < 1 OR month > 12",
           "expected": [
             {
               "ok": true
@@ -1356,9 +1576,9 @@
       "solution_sql": "SELECT DISTINCT user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 7 AND user_id IN (SELECT DISTINCT user_id FROM actions WHERE YEAR(action_date) = 2024 AND MONTH(action_date) = 6) ORDER BY user_id",
       "tests": [
         {
-          "name": "returns_retained_users",
+          "name": "correct_row_count",
           "assert": "ROWCOUNT",
-          "expected": 13
+          "expected": 15
         },
         {
           "name": "all_users_active_in_july",
@@ -1381,9 +1601,29 @@
           ]
         },
         {
-          "name": "correct_retained_count",
+          "name": "excludes_june_only_users",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 13 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE user_id IN (26, 27)",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_july_only_users",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE user_id IN (28, 29)",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "first_user_correct",
+          "assert": "SQL",
+          "sql": "SELECT user_id = 1 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1441,14 +1681,14 @@
       "solution_sql": "WITH shared AS (SELECT ea1.user_id AS user1_id, ea2.user_id AS user2_id, COUNT(DISTINCT ea1.event_id) AS shared_events_count FROM event_attendance ea1 JOIN event_attendance ea2 ON ea1.event_id = ea2.event_id AND ea1.user_id < ea2.user_id JOIN events e ON ea1.event_id = e.event_id WHERE e.is_private = true GROUP BY ea1.user_id, ea2.user_id HAVING COUNT(DISTINCT ea1.event_id) >= 2) SELECT * FROM shared s WHERE NOT EXISTS (SELECT 1 FROM friendships f WHERE (f.user1_id = s.user1_id AND f.user2_id = s.user2_id) OR (f.user1_id = s.user2_id AND f.user2_id = s.user1_id)) ORDER BY shared_events_count DESC, user1_id ASC",
       "tests": [
         {
-          "name": "returns_recommendation_pairs",
+          "name": "correct_row_count",
           "assert": "ROWCOUNT",
-          "expected": 8
+          "expected": 17
         },
         {
-          "name": "no_existing_friendships",
+          "name": "has_required_columns",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r JOIN friendships f ON (r.user1_id = f.user1_id AND r.user2_id = f.user2_id) OR (r.user1_id = f.user2_id AND r.user2_id = f.user1_id)",
+          "sql": "SELECT COUNT(*) >= 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user1_id', 'user2_id', 'shared_events_count')",
           "expected": [
             {
               "ok": true
@@ -1466,9 +1706,39 @@
           ]
         },
         {
+          "name": "min_2_shared_events",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE shared_events_count < 2",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "excludes_existing_friends",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) u WHERE EXISTS (SELECT 1 FROM friendships f WHERE (f.user1_id = u.user1_id AND f.user2_id = u.user2_id) OR (f.user1_id = u.user2_id AND f.user2_id = u.user1_id))",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "only_private_events",
+          "assert": "SQL",
+          "sql": "WITH pair_events AS (SELECT ea1.user_id AS u1, ea2.user_id AS u2, ea1.event_id FROM event_attendance ea1 JOIN event_attendance ea2 ON ea1.event_id = ea2.event_id AND ea1.user_id < ea2.user_id JOIN events e ON ea1.event_id = e.event_id WHERE e.is_private = false) SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE EXISTS (SELECT 1 FROM pair_events pe WHERE pe.u1 = r.user1_id AND pe.u2 = r.user2_id)",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "first_pair_correct",
           "assert": "SQL",
-          "sql": "SELECT user1_id = 2 AND user2_id = 4 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT user1_id = 1 AND user2_id = 15 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1544,9 +1814,9 @@
           "expected": 4
         },
         {
-          "name": "churn_rate_valid",
+          "name": "has_required_columns",
           "assert": "SQL",
-          "sql": "SELECT MIN(churn_rate) >= 0 AND MAX(churn_rate) <= 100 AS ok FROM ({{USER_SQL}})",
+          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('signup_week', 'total_signups', 'churned_users', 'churn_rate')",
           "expected": [
             {
               "ok": true
@@ -1554,9 +1824,9 @@
           ]
         },
         {
-          "name": "has_required_columns",
+          "name": "churn_rate_valid",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 4 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('signup_week', 'total_signups', 'churned_users', 'churn_rate')",
+          "sql": "SELECT MIN(churn_rate) >= 0 AND MAX(churn_rate) <= 100 AS ok FROM ({{USER_SQL}})",
           "expected": [
             {
               "ok": true
@@ -1587,6 +1857,26 @@
           "name": "first_week_rate_correct",
           "assert": "SQL",
           "sql": "SELECT ABS(churn_rate - 30.0) < 0.01 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "churned_never_exceeds_total",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE churned_users > total_signups",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "formula_correct",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE ABS(churn_rate - ROUND(100.0 * churned_users / total_signups, 2)) > 0.1",
           "expected": [
             {
               "ok": true
@@ -1650,16 +1940,6 @@
           "expected": 30
         },
         {
-          "name": "rolling_counts_positive",
-          "assert": "SQL",
-          "sql": "SELECT MIN(rolling_7day_users) > 0 AS ok FROM ({{USER_SQL}})",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
-        },
-        {
           "name": "has_required_columns",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('activity_date', 'rolling_7day_users')",
@@ -1670,9 +1950,39 @@
           ]
         },
         {
+          "name": "rolling_counts_positive",
+          "assert": "SQL",
+          "sql": "SELECT MIN(rolling_7day_users) > 0 AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "all_november_dates",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE activity_date < '2024-11-01' OR activity_date >= '2024-12-01'",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "first_day_rolling_correct",
           "assert": "SQL",
-          "sql": "SELECT rolling_7day_users = 9 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT rolling_7day_users = 12 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "rolling_always_gte_daily",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) r WHERE rolling_7day_users < (SELECT COUNT(DISTINCT user_id) FROM actions WHERE action_date = r.activity_date)",
           "expected": [
             {
               "ok": true
@@ -1731,19 +2041,9 @@
       "solution_sql": "WITH unique_logins AS (SELECT DISTINCT user_id, CAST(login_date AS DATE) AS login_date FROM logins), ranked AS (SELECT user_id, login_date, login_date - INTERVAL (ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date)) DAY AS island_key FROM unique_logins), streaks AS (SELECT user_id, island_key, COUNT(*) AS streak_length FROM ranked GROUP BY user_id, island_key) SELECT user_id, MAX(streak_length) AS longest_streak FROM streaks GROUP BY user_id HAVING MAX(streak_length) >= 5 ORDER BY longest_streak DESC, user_id ASC",
       "tests": [
         {
-          "name": "returns_8_users",
+          "name": "correct_row_count",
           "assert": "ROWCOUNT",
-          "expected": 8
-        },
-        {
-          "name": "all_streaks_at_least_5",
-          "assert": "SQL",
-          "sql": "SELECT MIN(longest_streak) >= 5 AS ok FROM ({{USER_SQL}})",
-          "expected": [
-            {
-              "ok": true
-            }
-          ]
+          "expected": 9
         },
         {
           "name": "has_required_columns",
@@ -1756,9 +2056,19 @@
           ]
         },
         {
+          "name": "all_streaks_at_least_5",
+          "assert": "SQL",
+          "sql": "SELECT MIN(longest_streak) >= 5 AS ok FROM ({{USER_SQL}})",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "first_user_correct",
           "assert": "SQL",
-          "sql": "SELECT user_id = 8 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT user_id = 1 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1769,6 +2079,16 @@
           "name": "first_streak_correct",
           "assert": "SQL",
           "sql": "SELECT longest_streak = 15 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "ordered_by_streak_desc",
+          "assert": "SQL",
+          "sql": "WITH r AS (SELECT longest_streak, ROW_NUMBER() OVER () as rn FROM ({{USER_SQL}})) SELECT COALESCE(BOOL_AND(r1.longest_streak >= r2.longest_streak), true) AS ok FROM r r1 JOIN r r2 ON r1.rn = r2.rn - 1",
           "expected": [
             {
               "ok": true
@@ -1832,6 +2152,16 @@
           "expected": 20
         },
         {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'new_status')",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "valid_status_values",
           "assert": "SQL",
           "sql": "SELECT COUNT(*) = 0 AS ok FROM ({{USER_SQL}}) WHERE new_status NOT IN ('NEW', 'EXISTING', 'CHURN', 'RESURRECT')",
@@ -1842,9 +2172,79 @@
           ]
         },
         {
-          "name": "has_required_columns",
+          "name": "new_paid_becomes_existing",
           "assert": "SQL",
-          "sql": "SELECT COUNT(*) = 2 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user_id', 'new_status')",
+          "sql": "SELECT new_status = 'EXISTING' AS ok FROM ({{USER_SQL}}) WHERE user_id = 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "new_unpaid_becomes_churn",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'CHURN' AS ok FROM ({{USER_SQL}}) WHERE user_id = 3",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "existing_paid_stays_existing",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'EXISTING' AS ok FROM ({{USER_SQL}}) WHERE user_id = 5",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "existing_unpaid_becomes_churn",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'CHURN' AS ok FROM ({{USER_SQL}}) WHERE user_id = 8",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "churn_paid_becomes_resurrect",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'RESURRECT' AS ok FROM ({{USER_SQL}}) WHERE user_id = 11",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "churn_unpaid_stays_churn",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'CHURN' AS ok FROM ({{USER_SQL}}) WHERE user_id = 14",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "resurrect_paid_becomes_existing",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'EXISTING' AS ok FROM ({{USER_SQL}}) WHERE user_id = 17",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "resurrect_unpaid_becomes_churn",
+          "assert": "SQL",
+          "sql": "SELECT new_status = 'CHURN' AS ok FROM ({{USER_SQL}}) WHERE user_id = 19",
           "expected": [
             {
               "ok": true
@@ -1904,6 +2304,21 @@
       "solution_sql": "WITH all_friends AS (SELECT user1_id AS user_id, user2_id AS friend_id FROM friendships UNION SELECT user2_id AS user_id, user1_id AS friend_id FROM friendships) SELECT a.user_id AS user1_id, b.user_id AS user2_id, COUNT(DISTINCT a.friend_id) AS mutual_friend_count FROM all_friends a JOIN all_friends b ON a.friend_id = b.friend_id AND a.user_id < b.user_id WHERE NOT EXISTS (SELECT 1 FROM all_friends f WHERE f.user_id = a.user_id AND f.friend_id = b.user_id) GROUP BY a.user_id, b.user_id HAVING COUNT(DISTINCT a.friend_id) >= 3 ORDER BY mutual_friend_count DESC, user1_id ASC, user2_id ASC",
       "tests": [
         {
+          "name": "correct_row_count",
+          "assert": "ROWCOUNT",
+          "expected": 7
+        },
+        {
+          "name": "has_required_columns",
+          "assert": "SQL",
+          "sql": "SELECT COUNT(*) >= 3 AS ok FROM (DESCRIBE ({{USER_SQL}})) WHERE column_name IN ('user1_id', 'user2_id', 'mutual_friend_count')",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
           "name": "all_have_3plus_mutual",
           "assert": "SQL",
           "sql": "SELECT MIN(mutual_friend_count) >= 3 AS ok FROM ({{USER_SQL}})",
@@ -1936,7 +2351,7 @@
         {
           "name": "first_pair_users_correct",
           "assert": "SQL",
-          "sql": "SELECT user1_id = 6 AND user2_id = 8 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT user1_id = 1 AND user2_id = 6 AS ok FROM ({{USER_SQL}}) LIMIT 1",
           "expected": [
             {
               "ok": true
@@ -1946,7 +2361,17 @@
         {
           "name": "first_mutual_count_correct",
           "assert": "SQL",
-          "sql": "SELECT mutual_friend_count = 6 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "sql": "SELECT mutual_friend_count = 4 AS ok FROM ({{USER_SQL}}) LIMIT 1",
+          "expected": [
+            {
+              "ok": true
+            }
+          ]
+        },
+        {
+          "name": "ordered_by_mutual_desc",
+          "assert": "SQL",
+          "sql": "WITH r AS (SELECT mutual_friend_count, ROW_NUMBER() OVER () as rn FROM ({{USER_SQL}})) SELECT COALESCE(BOOL_AND(r1.mutual_friend_count >= r2.mutual_friend_count), true) AS ok FROM r r1 JOIN r r2 ON r1.rn = r2.rn - 1",
           "expected": [
             {
               "ok": true

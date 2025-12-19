@@ -114,6 +114,42 @@ Default configuration in `/app/config.json`:
 
 ## [Unreleased]
 
+### Meta Interview Pack - Test Quality Sprint (December 2025)
+
+#### Problem Addressed
+Tests were passing by accident due to weak assertions. A query with incorrect SQL logic (missing WHERE, wrong aggregate) could return the right row count by chance.
+
+#### Added
+- **`scripts/generate-meta-interview-data-v3.py`**: Comprehensive data generator (~900 lines) with edge cases for all 20 challenges
+- **`docs/DATA_DESIGN.md`**: Complete documentation of edge cases and test rationale
+
+#### Changed
+- **Test assertions expanded**: ~60 → 125+ total assertions across 20 challenges
+- **pack_meta_interview/pack.json**: All challenges updated with SQL-based value validation tests
+- **All 18 parquet files regenerated** with v3 data including:
+  - Decoy data (records that should be excluded by correct queries)
+  - Boundary values (e.g., exactly 28 days for churn)
+  - Edge cases (zero values, ties, empty sets)
+
+#### Key Test Improvements by Challenge
+| Challenge | Key Improvements |
+|-----------|-----------------|
+| Q1 | 2023/2025 posts as decoys, single-post user exclusion |
+| Q2 | June-only and July-only users to test retention logic |
+| Q3 | App with 0 CTR, app with no impressions (division by zero) |
+| Q5 | Expanded from 3 to 17 recommendation pairs |
+| Q9 | All 5 histogram buckets validated with boundary values |
+| Q12 | All 8 advertiser state transitions mapped and tested |
+| Q14 | DENSE_RANK tie handling (Tech category has tied 2nd place) |
+
+#### Verification
+```bash
+python3 scripts/test-solutions-duckdb.py
+# Result: ✓ Passed: 20, ✗ Failed: 0
+```
+
+---
+
 ### Planned for v1.1
 - Additional packs for intermediate SQL
 - Pack difficulty ratings

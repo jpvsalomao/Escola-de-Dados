@@ -131,6 +131,37 @@ FROM active_users LEFT JOIN video_callers ON user_id, then COUNT(DISTINCT video_
 
 - Different approaches (EXISTS vs LEFT JOIN + COUNT, subquery vs CTE) can be equally valid
 
+**WHERE before GROUP BY (THIS IS CORRECT - DO NOT FLAG AS WRONG):**
+When filtering with WHERE before GROUP BY, this is standard and correct SQL:
+- WHERE filters rows BEFORE aggregation - this is intentional and correct
+- Example: Filtering out pages a user already liked BEFORE counting friends who liked remaining pages
+- The pattern: WHERE page_id NOT IN (SELECT page_id FROM likes WHERE user_id = ...) GROUP BY page_id
+- This correctly excludes unwanted rows first, then aggregates the remaining rows
+- Do NOT claim this "works by accident" or has "logic flaws" - it's the correct approach
+
+**Correlated Subqueries in WHERE (VALID PATTERN):**
+Using a correlated subquery like WHERE x NOT IN (SELECT ... WHERE outer.col = inner.col) is valid:
+- The subquery runs for each outer row, which is expected behavior
+- This correctly filters based on per-row conditions
+- It's equivalent to NOT EXISTS and LEFT JOIN + IS NULL patterns
+
+**NULL Filtering After LEFT JOIN (OFTEN INTENTIONAL - THINK BEFORE FLAGGING):**
+When WHERE filters out NULL values from a LEFT JOIN, ask: "Is this actually a problem?"
+- Example: LEFT JOIN page_likes, then WHERE page_id NOT IN (...) filters out NULL page_ids
+- If we're recommending PAGES, rows where page_id is NULL are USELESS - there's nothing to recommend
+- Filtering them out is CORRECT, not a "logic flaw" or "silent exclusion problem"
+- Only flag NULL filtering if it genuinely loses meaningful data for the question being asked
+- A recommendation query that excludes "no recommendations" rows is CORRECT behavior
+
+## CRITICAL: AVOID FALSE POSITIVES
+When the query results are correct:
+- Do NOT invent hypothetical flaws like "works by accident", "happens to work for this data", or "silently excludes"
+- If results are correct, the logic is likely correct - verify before claiming issues
+- Standard SQL patterns (WHERE before GROUP BY, correlated subqueries, CTEs) are NOT flaws
+- Only flag real issues you can explain with a concrete failing case
+- Ask yourself: "Would this ACTUALLY cause wrong results, or am I overthinking?"
+- If filtering out NULL/empty data makes sense for the question (e.g., "recommend pages" can't recommend NULL), it's NOT a flaw
+
 ## CORRECTNESS LEVELS:
 - "correct": Results are right AND logic is sound for edge cases
 - "partially_correct": Results are right but logic has potential edge case issues, OR results are close but missing something
